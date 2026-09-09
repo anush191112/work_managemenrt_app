@@ -4,6 +4,13 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  console.log("SUPABASE ENV CHECK", {
+    hasUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    urlLength: process.env.NEXT_PUBLIC_SUPABASE_URL?.length ?? 0,
+    hasPublishableKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY),
+    keyLength: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.length ?? 0,
+  });
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
