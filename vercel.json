@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/generate-daily-tasks",
+      "schedule": "35 18 * * *"
+    },
+    {
+      "path": "/api/cron/task-deadline-checks-morning",
+      "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/task-deadline-checks-afternoon",
+      "schedule": "30 9 * * *"
+    }
+  ]
+}

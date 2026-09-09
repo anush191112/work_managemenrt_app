@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.next/
+.DS_Store
+supabase/.temp/
+*.tsbuildinfo
+.env
+.env*.local
