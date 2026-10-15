@@ -3,6 +3,7 @@ dist/
 .next/
 .DS_Store
 supabase/.temp/
+prepared-imports/
 *.tsbuildinfo
 .env
 .env*.local

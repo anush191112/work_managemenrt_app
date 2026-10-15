@@ -29,10 +29,13 @@ export default async function DashboardPage() {
   await refreshDeadlineAlerts();
   const supabase = await createClient();
   const date = currentIstDate();
+  const yesterday = new Date(`${date}T00:00:00Z`);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  const yesterdayDate = yesterday.toISOString().slice(0, 10);
   const { data: taskRows } = await supabase
     .from("tasks")
-    .select("id, title, category, assigned_to, scheduled_date, quantity_required, quantity_done, time_allotted_minutes, deadline_time, priority, status, requires_proof, has_blocker, is_pool_task, carried_forward_from, task_proofs(id, file_url)")
-    .eq("scheduled_date", date)
+    .select("id, title, category, assigned_to, scheduled_date, quantity_required, quantity_done, time_allotted_minutes, deadline_time, priority, status, requires_proof, has_blocker, is_pool_task, pool_target_total, carried_forward_from, task_proofs(id, file_url)")
+    .or(`scheduled_date.eq.${date},and(is_pool_task.eq.true,scheduled_date.lte.${date},status.neq.done),and(category.eq.lead_sheet,title.eq."Weekly Lead Sheet",scheduled_date.eq.${yesterdayDate},status.neq.done)`)
     .order("deadline_time", { ascending: true, nullsFirst: false });
   const tasks = (taskRows ?? []) as Array<Omit<DashboardTask, "assignedToName" | "proofCount" | "proofUrls"> & { task_proofs: Array<{ id: string; file_url: string }> }>;
   const assigneeIds = [...new Set(tasks.map((task) => task.assigned_to))];
@@ -69,6 +72,11 @@ export default async function DashboardPage() {
           {isManagerView ? <Link className="back-link" href="/templates">Templates</Link> : null}
           {isManagerView ? <Link className="back-link" href="/reports">Reports</Link> : null}
           {isManagerView ? <Link className="back-link" href="/activity">Activity</Link> : null}
+          <Link className="back-link" href="/architect-export">Architect export</Link>
+          <Link className="back-link" href="/architect-import">Import architects</Link>
+          <Link className="back-link" href="/campaigns">Campaigns</Link>
+          <Link className="back-link" href="/leads">Leads</Link>
+          {isManagerView ? <Link className="back-link" href="/export-audit">Export audit</Link> : null}
           {actor.role === "admin" ? <Link className="back-link" href="/users">Users</Link> : null}
           <Link className="back-link" href="/calendar">Calendar</Link>
           {isManagerView ? <GenerateTasksButton /> : null}

@@ -1,0 +1,2 @@
+import Link from "next/link"; import { redirect } from "next/navigation"; import { getCurrentActor } from "@/lib/auth/current-actor"; import { LeadEntryForm } from "./lead-entry-form";
+export default async function LeadsPage() { if (!await getCurrentActor()) redirect("/login"); return <main><header className="page-header"><div><p className="eyebrow">Inbox</p><h1>Lead entry</h1></div><Link className="back-link" href="/dashboard">Back to today</Link></header><LeadEntryForm /></main>; }

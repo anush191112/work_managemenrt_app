@@ -12,7 +12,7 @@ export default async function TemplatesPage() {
 
   const supabase = await createClient();
   const [{ data: templates }, { data: users }] = await Promise.all([
-    supabase.from("task_templates").select("id, title, category, day_of_week, quantity, time_allotted_minutes, is_mandatory, requires_proof, assigned_to").order("day_of_week"),
+    supabase.from("task_templates").select("id, title, category, day_of_week, quantity, time_allotted_minutes, is_mandatory, requires_proof, repeats_daily_until_cleared, assigned_to").order("day_of_week"),
     supabase.from("users").select("id, name").order("name"),
   ]);
 

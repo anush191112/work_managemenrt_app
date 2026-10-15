@@ -17,6 +17,7 @@ const templates: TaskEngineTemplate[] = [
     time_allotted_minutes: 120,
     is_mandatory: true,
     requires_proof: true,
+    repeats_daily_until_cleared: false,
     created_by: "admin-1",
   },
   {
@@ -29,6 +30,7 @@ const templates: TaskEngineTemplate[] = [
     time_allotted_minutes: 120,
     is_mandatory: true,
     requires_proof: true,
+    repeats_daily_until_cleared: false,
     created_by: "admin-1",
   },
   {
@@ -41,6 +43,7 @@ const templates: TaskEngineTemplate[] = [
     time_allotted_minutes: null,
     is_mandatory: false,
     requires_proof: false,
+    repeats_daily_until_cleared: false,
     created_by: "admin-1",
   },
   {
@@ -53,6 +56,7 @@ const templates: TaskEngineTemplate[] = [
     time_allotted_minutes: 60,
     is_mandatory: true,
     requires_proof: true,
+    repeats_daily_until_cleared: false,
     created_by: "admin-1",
   },
 ];
@@ -70,6 +74,96 @@ const baseInput: GenerateDailyTasksInput = {
 };
 
 describe("generateDailyTasks", () => {
+  it("creates one ongoing pool task for a quantity-based Lead Sheet template", () => {
+    const result = generateDailyTasks({
+      ...baseInput,
+      date: "2026-09-10",
+      users: [{ id: "user-1", work_days: DEFAULT_WORK_DAYS }],
+      templates: [{
+        ...templates[2],
+        quantity: 25,
+        repeats_daily_until_cleared: true,
+      }],
+    });
+
+    expect(result.created).toHaveLength(1);
+    expect(result.created[0]).toMatchObject({
+      is_pool_task: true,
+      pool_target_total: 25,
+      quantity_required: 25,
+      quantity_done: 0,
+    });
+  });
+
+  it("keeps a quantity-based test template as a normal daily task until the option is enabled", () => {
+    const testTemplate = {
+      ...templates[2],
+      id: "tpl-test",
+      title: "test",
+      quantity: 10,
+      repeats_daily_until_cleared: false,
+    };
+    const result = generateDailyTasks({
+      ...baseInput,
+      date: "2026-09-10",
+      users: [{ id: "user-1", work_days: DEFAULT_WORK_DAYS }],
+      templates: [testTemplate],
+    });
+
+    expect(result.created[0]).toMatchObject({
+      title: "test",
+      is_pool_task: false,
+    });
+    expect(result.created[0].pool_target_total).toBeUndefined();
+  });
+
+  it("does not create a new pool row while the existing Lead Sheet pool is incomplete", () => {
+    const poolTemplate = {
+      ...templates[2],
+      quantity: 25,
+      repeats_daily_until_cleared: true,
+    };
+    const result = generateDailyTasks({
+      ...baseInput,
+      date: "2026-09-17",
+      users: [{ id: "user-1", work_days: DEFAULT_WORK_DAYS }],
+      templates: [poolTemplate],
+      activePoolTasks: [{
+        template_id: poolTemplate.id,
+        assigned_to: "user-1",
+        quantity_done: 8,
+        pool_target_total: 25,
+        status: "in_progress",
+      }],
+    });
+
+    expect(result.created).toHaveLength(0);
+    expect(result.skipped.alreadyExists).toBe(1);
+  });
+
+  it("starts the next pool cycle after the prior one is done", () => {
+    const poolTemplate = {
+      ...templates[2],
+      quantity: 25,
+      repeats_daily_until_cleared: true,
+    };
+    const result = generateDailyTasks({
+      ...baseInput,
+      date: "2026-09-17",
+      users: [{ id: "user-1", work_days: DEFAULT_WORK_DAYS }],
+      templates: [poolTemplate],
+      activePoolTasks: [{
+        template_id: poolTemplate.id,
+        assigned_to: "user-1",
+        quantity_done: 25,
+        pool_target_total: 25,
+        status: "done",
+      }],
+    });
+
+    expect(result.created).toHaveLength(1);
+    expect(result.created[0].pool_target_total).toBe(25);
+  });
   it("creates tasks from templates matching the IST day-of-week", () => {
     const mondayInput: GenerateDailyTasksInput = {
       ...baseInput,

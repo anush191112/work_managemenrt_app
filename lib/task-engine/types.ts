@@ -54,6 +54,7 @@ export interface TaskEngineTemplate {
   time_allotted_minutes: number | null;
   is_mandatory: boolean;
   requires_proof: boolean;
+  repeats_daily_until_cleared: boolean;
   created_by: string;
 }
 
@@ -61,6 +62,14 @@ export interface TaskEngineExistingTask {
   template_id: string | null;
   assigned_to: string;
   scheduled_date: IstDateString;
+}
+
+export interface TaskEnginePoolTask {
+  template_id: string | null;
+  assigned_to: string;
+  quantity_done: number;
+  pool_target_total: number | null;
+  status: TaskStatus;
 }
 
 /** Task fields needed to plan an off-day shift before applying it to Postgres. */
@@ -91,6 +100,7 @@ export interface GeneratedTask {
   status: TaskStatus;
   requires_proof: boolean;
   is_pool_task: boolean;
+  pool_target_total?: number;
 }
 
 export interface WorkingDayContext {
@@ -105,6 +115,7 @@ export interface GenerateDailyTasksInput {
   users: TaskEngineUser[];
   templates: TaskEngineTemplate[];
   existingTasks: TaskEngineExistingTask[];
+  activePoolTasks?: TaskEnginePoolTask[];
   holidays: TaskEngineHoliday[];
   offDayRequests: TaskEngineOffDayRequest[];
 }

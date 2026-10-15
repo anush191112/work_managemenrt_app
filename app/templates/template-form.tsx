@@ -30,6 +30,7 @@ export function TemplateForm({ users }: { users: Array<{ id: string; name: strin
         day_of_week: Number(fields.get("day_of_week")), assigned_to: fields.get("assigned_to"),
         quantity: fields.get("quantity"), time_allotted_minutes: fields.get("time_allotted_minutes"),
         is_mandatory: fields.get("is_mandatory") === "on", requires_proof: fields.get("requires_proof") === "on",
+        repeats_daily_until_cleared: fields.get("repeats_daily_until_cleared") === "on",
       }),
     });
     const result = await response.json();
@@ -48,6 +49,7 @@ export function TemplateForm({ users }: { users: Array<{ id: string; name: strin
     <label>Day<select name="day_of_week" defaultValue="1">{DAYS.map((day, index) => <option key={day} value={index}>{day}</option>)}</select></label>
     <label>Assigned to<select name="assigned_to" required>{users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}</select></label>
     <label>Required quantity<input name="quantity" type="number" min="0" placeholder="Optional" /></label>
+    <label className="checkbox-label"><input name="repeats_daily_until_cleared" type="checkbox" /> Repeats daily until cleared</label>
     <label>Time allotted (minutes)<input name="time_allotted_minutes" type="number" min="1" placeholder="Optional" /></label>
     <label className="checkbox-label"><input name="is_mandatory" type="checkbox" defaultChecked /> Mandatory task</label>
     <label className="checkbox-label"><input name="requires_proof" type="checkbox" /> Require proof</label>

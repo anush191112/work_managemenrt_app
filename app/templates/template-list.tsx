@@ -23,6 +23,7 @@ interface Template {
   time_allotted_minutes: number | null;
   is_mandatory: boolean;
   requires_proof: boolean;
+  repeats_daily_until_cleared: boolean;
 }
 
 export function TemplateList({ templates, users }: { templates: Template[]; users: Array<{ id: string; name: string }> }) {
@@ -44,6 +45,7 @@ export function TemplateList({ templates, users }: { templates: Template[]; user
         day_of_week: Number(fields.get("day_of_week")), assigned_to: fields.get("assigned_to"),
         quantity: fields.get("quantity"), time_allotted_minutes: fields.get("time_allotted_minutes"),
         is_mandatory: fields.get("is_mandatory") === "on", requires_proof: fields.get("requires_proof") === "on",
+        repeats_daily_until_cleared: fields.get("repeats_daily_until_cleared") === "on",
       }),
     });
     const result = await response.json();
@@ -70,7 +72,7 @@ export function TemplateList({ templates, users }: { templates: Template[]; user
     {templates.map((template) => <details className="template-item" key={template.id}>
       <summary className="template-summary">
         <span><strong>{template.title}</strong><small>{DAYS[template.day_of_week]} · {names.get(template.assigned_to) ?? "Team member"}</small></span>
-        <span>{template.quantity ?? "No count"} · {template.is_mandatory ? "Mandatory" : "Flexible"}{template.requires_proof ? " · Proof" : ""}</span>
+        <span>{template.quantity ?? "No count"} · {template.is_mandatory ? "Mandatory" : "Flexible"}{template.repeats_daily_until_cleared ? " · Repeats daily" : ""}{template.requires_proof ? " · Proof" : ""}</span>
       </summary>
       <form className="template-edit-form" onSubmit={(event) => save(event, template.id)}>
         <label>Task name<input name="title" required defaultValue={template.title} /></label>
@@ -78,6 +80,7 @@ export function TemplateList({ templates, users }: { templates: Template[]; user
         <label>Day<select name="day_of_week" defaultValue={template.day_of_week}>{DAYS.map((day, index) => <option key={day} value={index}>{day}</option>)}</select></label>
         <label>Assigned to<select name="assigned_to" defaultValue={template.assigned_to}>{users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}</select></label>
         <label>Required quantity<input name="quantity" type="number" min="0" defaultValue={template.quantity ?? ""} /></label>
+        <label className="checkbox-label"><input name="repeats_daily_until_cleared" type="checkbox" defaultChecked={template.repeats_daily_until_cleared} /> Repeats daily until cleared</label>
         <label>Time allotted (minutes)<input name="time_allotted_minutes" type="number" min="1" defaultValue={template.time_allotted_minutes ?? ""} /></label>
         <label className="checkbox-label"><input name="is_mandatory" type="checkbox" defaultChecked={template.is_mandatory} /> Mandatory task</label>
         <label className="checkbox-label"><input name="requires_proof" type="checkbox" defaultChecked={template.requires_proof} /> Require proof</label>

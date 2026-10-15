@@ -4,6 +4,7 @@ import type {
   GenerateDailyTasksResult,
   GeneratedTask,
   TaskEngineExistingTask,
+  TaskEnginePoolTask,
   TaskEngineTemplate,
   TaskPriority,
 } from "./types";
@@ -51,8 +52,19 @@ function toGeneratedTask(
     priority: priorityForTemplate(template),
     status: "not_started",
     requires_proof: template.requires_proof,
-    is_pool_task: false,
+    is_pool_task: template.repeats_daily_until_cleared,
+    ...(template.repeats_daily_until_cleared ? { pool_target_total: template.quantity ?? undefined } : {}),
   };
+}
+
+function hasActivePoolTask(template: TaskEngineTemplate, tasks: TaskEnginePoolTask[]): boolean {
+  return tasks.some((task) =>
+    task.template_id === template.id
+    && task.assigned_to === template.assigned_to
+    && task.status !== "done"
+    && task.pool_target_total !== null
+    && task.quantity_done < task.pool_target_total,
+  );
 }
 
 /**
@@ -67,6 +79,7 @@ export function generateDailyTasks(
     users,
     templates,
     existingTasks,
+    activePoolTasks = [],
     holidays,
     offDayRequests,
   } = input;
@@ -103,6 +116,11 @@ export function generateDailyTasks(
     for (const template of userTemplates) {
       if (shouldSkipTemplateQuantity(template.quantity)) {
         skipped.zeroQuantity += 1;
+        continue;
+      }
+
+      if (template.repeats_daily_until_cleared && hasActivePoolTask(template, activePoolTasks)) {
+        skipped.alreadyExists += 1;
         continue;
       }
 

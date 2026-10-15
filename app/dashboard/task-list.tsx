@@ -22,6 +22,7 @@ export interface DashboardTask {
   requires_proof: boolean;
   has_blocker: boolean;
   is_pool_task: boolean;
+  pool_target_total: number | null;
   carried_forward_from: string | null;
   proofCount: number;
   proofUrls: string[];
@@ -143,7 +144,7 @@ export function TaskList({ tasks, isOwnDashboard, canManageTasks, templateHref }
           <article className="task-row" key={task.id}>
             <div className="task-main">
               <div className="task-title-line">
-                <h2>{task.title}</h2>
+                <h2>{task.category === "lead_sheet" && (task.title === "Weekly Lead Sheet" || task.title === "Lead Sheet Backlog") ? <Link className="back-link" href={`/lead-sheets/${task.id}`}>{task.title}</Link> : task.title}</h2>
                 <span className={`status-dot status-${task.status}`} title={STATUS_LABELS[task.status]} />
               </div>
               <p className="task-meta">
@@ -161,21 +162,22 @@ export function TaskList({ tasks, isOwnDashboard, canManageTasks, templateHref }
                   <input
                     type="number"
                     min="0"
+                    max={task.is_pool_task ? task.pool_target_total ?? undefined : task.quantity_required}
                     defaultValue={task.quantity_done}
                     onBlur={(event) => patchTask(task.id, { quantity_done: Number(event.target.value) })}
                     disabled={!canManageTasks || busy}
                   />
-                  <span>of {task.quantity_required}</span>
+                  <span>of {task.is_pool_task ? task.pool_target_total : task.quantity_required}</span>
                 </label>
               ) : null}
-              <select
+              {!task.is_pool_task ? <select
                 aria-label={`Status for ${task.title}`}
                 value={task.status}
                 onChange={(event) => patchTask(task.id, { status: event.target.value })}
                 disabled={!canManageTasks || busy}
               >
                 {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
+              </select> : null}
               {isOwnDashboard ? (
                 <label className="icon-button" title="Upload proof">
                   <Upload size={17} aria-hidden="true" />
@@ -186,6 +188,8 @@ export function TaskList({ tasks, isOwnDashboard, canManageTasks, templateHref }
               {task.proofUrls.length ? <details className="proof-preview"><summary className="icon-button" title="View proof" aria-label="View proof"><Image size={17} aria-hidden="true" /></summary><div className="proof-panel">{task.proofUrls.map((url, index) => <a href={url} key={url} target="_blank" rel="noreferrer"><img src={url} alt={`Proof ${index + 1} for ${task.title}`} /></a>)}</div></details> : null}
               {task.requires_proof ? <span className="proof-state">Proof {task.proofCount ? "added" : "required"}</span> : null}
             </div>
+
+            {task.is_pool_task ? <p className="pool-progress">Ongoing pool · {Math.max(0, (task.pool_target_total ?? 0) - task.quantity_done)} remaining</p> : null}
 
             {isOwnDashboard ? (
               <details className="blocker-panel">

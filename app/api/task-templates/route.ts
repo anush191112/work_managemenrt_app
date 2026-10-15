@@ -25,6 +25,9 @@ export async function POST(request: Request) {
   if ((quantity !== null && (!Number.isInteger(quantity) || quantity < 0)) || (minutes !== null && (!Number.isInteger(minutes) || minutes <= 0))) {
     return NextResponse.json({ error: "Quantity must be zero or more and time must be positive" }, { status: 400 });
   }
+  if (body.repeats_daily_until_cleared === true && (quantity === null || quantity <= 0)) {
+    return NextResponse.json({ error: "A repeating pool task needs a positive target quantity" }, { status: 400 });
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.from("task_templates").insert({
@@ -36,6 +39,7 @@ export async function POST(request: Request) {
     time_allotted_minutes: minutes,
     is_mandatory: body.is_mandatory !== false,
     requires_proof: body.requires_proof === true,
+    repeats_daily_until_cleared: body.repeats_daily_until_cleared === true,
     created_by: actor.id,
   }).select("id").single();
 

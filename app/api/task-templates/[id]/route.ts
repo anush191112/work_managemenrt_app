@@ -29,6 +29,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if ((quantity !== null && (!Number.isInteger(quantity) || quantity < 0)) || (minutes !== null && (!Number.isInteger(minutes) || minutes <= 0))) {
     return NextResponse.json({ error: "Quantity must be zero or more and time must be positive" }, { status: 400 });
   }
+  if (body.repeats_daily_until_cleared === true && (quantity === null || quantity <= 0)) {
+    return NextResponse.json({ error: "A repeating pool task needs a positive target quantity" }, { status: 400 });
+  }
 
   const { id } = await params;
   const supabase = await createClient();
@@ -41,6 +44,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     time_allotted_minutes: minutes,
     is_mandatory: body.is_mandatory !== false,
     requires_proof: body.requires_proof === true,
+    repeats_daily_until_cleared: body.repeats_daily_until_cleared === true,
   }).eq("id", id).select("id").maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

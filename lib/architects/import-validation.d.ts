@@ -1,0 +1,11 @@
+export type ArchitectImportRow = { state: string; serial_no: number; name: string; phone: string | null; email: string | null; address: string | null; birthdate: string | null };
+export type ImportIssue = { line: number | null; reason: string };
+export function normalizePhone(value: unknown): string | null;
+export function normalizeEmail(value: unknown): string | null;
+export function csvRows(text: string): string[][];
+export function parseArchitectCsv(text: string): { error: string } | { records: Array<ArchitectImportRow & { line: number }>; invalidRows: ImportIssue[]; duplicatePairs: Array<{ line: number; state: string; serial_no: number }> };
+export function prepareCleanImport(text: string, existingPairs: Array<{ state: string; serial_no: number }>, existingPhones: Array<{ name: string; phone: string | null }>): { rejected: boolean; reason: string | null; rejectedRows: ImportIssue[]; rows: ArchitectImportRow[]; skipped: ImportIssue[] };
+export type BirthdayContactImportRow = { name: string; phone: string; email: string | null; address: string | null; birthdate: string };
+export function parseBirthdayContactsCsv(text: string): { error: string } | { records: Array<BirthdayContactImportRow & { line: number }> };
+export function prepareBirthdayContactsImport(text: string, existingPhones: Array<string | null>): { rejected: boolean; reason: string | null; rejectedRows: ImportIssue[]; rows: BirthdayContactImportRow[]; skipped: ImportIssue[] };
+export function normalizeBirthdate(value: unknown): string | null;

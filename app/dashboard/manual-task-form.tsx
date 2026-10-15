@@ -22,6 +22,7 @@ export function ManualTaskForm({ users, today }: { users: Array<{ id: string; na
       scheduled_date: fields.get("scheduled_date"), deadline_time: fields.get("deadline_time"), priority: fields.get("priority"),
       quantity_required: fields.get("quantity_required"), time_allotted_minutes: fields.get("time_allotted_minutes"),
       requires_proof: fields.get("requires_proof") === "on",
+      repeats_daily_until_cleared: fields.get("repeats_daily_until_cleared") === "on",
     }) });
     const result = await response.json();
     setBusy(false);
@@ -39,6 +40,7 @@ export function ManualTaskForm({ users, today }: { users: Array<{ id: string; na
       <label>Deadline<input name="deadline_time" type="time" /></label>
       <label>Priority<select name="priority" defaultValue="medium"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option><option value="flexible">Flexible</option></select></label>
       <label>Required quantity<input name="quantity_required" type="number" min="0" placeholder="Optional" /></label>
+      <label className="checkbox-label"><input name="repeats_daily_until_cleared" type="checkbox" /> Repeat daily until cleared</label>
       <label>Time allotted (min)<input name="time_allotted_minutes" type="number" min="1" placeholder="Optional" /></label>
       <label className="checkbox-label"><input name="requires_proof" type="checkbox" /> Require proof</label>
       {error ? <p className="error" role="alert">{error}</p> : null}
