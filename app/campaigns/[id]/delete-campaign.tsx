@@ -1,0 +1,4 @@
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+export function DeleteCampaign({ campaignId }: { campaignId: string }) { const [message, setMessage] = useState<string | null>(null); const [busy, setBusy] = useState(false); const router = useRouter(); async function remove() { if (!window.confirm("Delete this campaign? This cannot be undone.")) return; setBusy(true); const response = await fetch(`/api/campaigns/${campaignId}`, { method: "DELETE" }); const result = await response.json(); if (!response.ok) { setMessage(result.error ?? "Could not delete campaign"); setBusy(false); return; } router.push("/campaigns"); router.refresh(); } return <section className="assignment-control"><button type="button" className="danger-action" onClick={remove} disabled={busy}>{busy ? "Deleting" : "Delete campaign"}</button>{message ? <p className="action-message">{message}</p> : null}</section>; }

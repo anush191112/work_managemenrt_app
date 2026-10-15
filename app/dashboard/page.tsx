@@ -76,6 +76,7 @@ export default async function DashboardPage() {
           <Link className="back-link" href="/architect-import">Import architects</Link>
           <Link className="back-link" href="/campaigns">Campaigns</Link>
           <Link className="back-link" href="/leads">Leads</Link>
+          <Link className="back-link" href="/contact-preferences">Do not contact</Link>
           {isManagerView ? <Link className="back-link" href="/export-audit">Export audit</Link> : null}
           {actor.role === "admin" ? <Link className="back-link" href="/users">Users</Link> : null}
           <Link className="back-link" href="/calendar">Calendar</Link>

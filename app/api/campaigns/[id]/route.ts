@@ -24,3 +24,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ campaign: data });
   } catch (cause) { return NextResponse.json({ error: cause instanceof Error ? cause.message : "Could not update campaign" }, { status: 400 }); }
 }
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const actor = await getCurrentActor();
+  if (actor?.role !== "admin") return NextResponse.json({ error: "Only admins can delete campaigns" }, { status: 403 });
+  const { id } = await params;
+  const { error } = await createAdminClient().from("campaigns").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.code === "23503" ? "This campaign is part of a lead sheet or backlog and cannot be deleted." : error.message }, { status: 400 });
+  return NextResponse.json({ ok: true });
+}

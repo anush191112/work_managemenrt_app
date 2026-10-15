@@ -4,6 +4,7 @@ import { getCurrentActor } from "@/lib/auth/current-actor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CampaignAssignment } from "./campaign-assignment";
 import { CampaignMetricsForm } from "./campaign-metrics-form";
+import { DeleteCampaign } from "./delete-campaign";
 
 export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const actor = await getCurrentActor();
@@ -19,5 +20,5 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     if (actor.role !== "manager" || owner?.manager_id !== actor.id) notFound();
   }
   const { data: users } = actor.role === "admin" ? await admin.from("users").select("id, name").order("name") : { data: [] };
-  return <main><header className="page-header"><div><p className="eyebrow">{campaign.is_shared ? "Shared historical backlog" : campaign.source}</p><h1>{campaign.name}</h1><p className="dashboard-date">{campaign.campaign_type} · {campaign.account} · Campaign date {campaign.campaign_date}</p></div><Link className="back-link" href="/campaigns">Back to campaigns</Link></header><section className="campaign-overview"><div><span>Retarget</span><strong>{campaign.retarget_name}</strong></div><div><span>Due date</span><strong>{campaign.retarget_due_date}</strong></div><div><span>Leads</span><strong>{campaign.total_leads}</strong></div><div><span>Delivery</span><strong>{campaign.percentage ?? "-"}{campaign.percentage === null ? "" : "%"}</strong></div></section>{actor.role === "admin" && !campaign.is_shared ? <CampaignAssignment campaignId={campaign.id} assignedTo={campaign.assigned_to} users={users ?? []} /> : null}<CampaignMetricsForm campaign={campaign} /></main>;
+  return <main><header className="page-header"><div><p className="eyebrow">{campaign.is_shared ? "Shared historical backlog" : campaign.source}</p><h1>{campaign.name}</h1><p className="dashboard-date">{campaign.campaign_type} · {campaign.account} · Campaign date {campaign.campaign_date}</p></div><Link className="back-link" href="/campaigns">Back to campaigns</Link></header><section className="campaign-overview"><div><span>Retarget</span><strong>{campaign.retarget_name}</strong></div><div><span>Due date</span><strong>{campaign.retarget_due_date}</strong></div><div><span>Leads</span><strong>{campaign.total_leads}</strong></div><div><span>Delivery</span><strong>{campaign.percentage ?? "-"}{campaign.percentage === null ? "" : "%"}</strong></div></section>{actor.role === "admin" && !campaign.is_shared ? <CampaignAssignment campaignId={campaign.id} assignedTo={campaign.assigned_to} users={users ?? []} /> : null}<CampaignMetricsForm campaign={campaign} />{actor.role === "admin" ? <DeleteCampaign campaignId={campaign.id} /> : null}</main>;
 }

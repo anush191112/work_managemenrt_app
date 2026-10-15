@@ -31,11 +31,15 @@ export async function selectArchitects(request: ExportRequest) {
   let campaignType: CampaignType;
   if (request.mode === "state_wise") {
     campaignType = request.campaignType;
-    const { data, error } = await admin.from("architects").select("id, state, serial_no, name, phone, email, address, birthdate").eq("state", request.state.trim()).gte("serial_no", request.startingSerial).order("serial_no");
+    const { data, error } = await admin.from("architects").select("id, state, serial_no, name, phone, email, address, birthdate").eq("state", request.state.trim()).gte("serial_no", request.startingSerial).order("serial_no").range(0, 9_999);
     if (error) throw new Error(error.message);
     allRows = ((data ?? []) as Architect[]).map((row) => ({ ...row, source: "architect" }));
     if (!Number.isInteger(request.count) || request.count < 1) throw new Error("Count must be a positive whole number");
-    allRows = allRows.filter((row) => validContact(row, campaignType)).slice(0, request.count);
+    const phones = [...new Set(allRows.flatMap((row) => row.phone ? [normalizePhone(row.phone)] : []).filter((phone): phone is string => Boolean(phone)))];
+    const { data: suppressions, error: suppressionError } = phones.length ? await admin.from("contact_suppressions").select("phone").in("phone", phones) : { data: [], error: null };
+    if (suppressionError) throw new Error(suppressionError.message);
+    const blockedPhones = new Set((suppressions ?? []).map((row) => row.phone));
+    allRows = allRows.filter((row) => validContact(row, campaignType) && !blockedPhones.has(normalizePhone(row.phone) ?? "")).slice(0, request.count);
     if (allRows.length < request.count) throw new Error(`Only ${allRows.length} eligible contacts were found from that serial number`);
   } else {
     campaignType = "whatsapp";
@@ -48,7 +52,10 @@ export async function selectArchitects(request: ExportRequest) {
     const merged = new Map<string, ExportContact>();
     for (const row of (architectRows ?? []) as Architect[]) if (validContact({ ...row, source: "architect" }, campaignType) && row.phone) merged.set(row.phone, { ...row, source: "architect" });
     for (const row of birthdayRows ?? []) if (normalizePhone(row.phone)) merged.set(row.phone, { ...row, state: null, serial_no: null, source: "birthday_contact" });
-    allRows = [...merged.values()];
+    const { data: suppressions, error: suppressionError } = merged.size ? await admin.from("contact_suppressions").select("phone").in("phone", [...merged.keys()]) : { data: [], error: null };
+    if (suppressionError) throw new Error(suppressionError.message);
+    const blockedPhones = new Set((suppressions ?? []).map((row) => row.phone));
+    allRows = [...merged.values()].filter((row) => !blockedPhones.has(normalizePhone(row.phone) ?? ""));
     if (allRows.length === 0) throw new Error("No architects with a valid phone number have that birthday");
   }
   let duplicates: Array<{ architectId: string; exportedAt: string }> = [];
@@ -62,7 +69,7 @@ export async function selectArchitects(request: ExportRequest) {
     duplicates = (oldItems ?? []).map((item) => ({ architectId: item.architect_id, exportedAt: loggedAt.get(item.export_id) ?? "" }));
   }
   const birthday = request.mode === "birthday" ? birthdaySelection(request.targetDate) : null;
-  const filename = request.mode === "state_wise" ? `${stateAbbreviation(request.state)}_${allRows[0].serial_no}-${allRows.at(-1)?.serial_no}.csv` : `BIRTHDAY_${request.targetDate}.csv`;
+  const filename = request.mode === "state_wise" ? `${stateAbbreviation(request.state)}_${request.startingSerial}-${allRows.at(-1)?.serial_no}.csv` : `BIRTHDAY_${request.targetDate}.csv`;
   const architectContactCount = allRows.filter((row) => row.source === "architect").length;
   return { rows: allRows, campaignType, duplicates, filename, csv: csvFor(allRows), architectContactCount, birthdayContactCount: allRows.length - architectContactCount, birthdayCampaignDate: birthday?.campaignDate, birthdayPlaceholderDate: birthday?.placeholderDate };
 }
@@ -73,18 +80,18 @@ export async function createExport(actorId: string, request: ExportRequest) {
   const campaignDate = request.mode === "birthday" ? selected.birthdayCampaignDate : request.campaignDate;
   if (!isIsoDate(campaignDate)) throw new Error("Campaign date must be a valid date");
   const admin = createAdminClient();
-  const first = selected.rows[0]; const last = selected.rows.at(-1)!;
+  const last = selected.rows.at(-1)!;
   const logData: Record<string, unknown> = request.mode === "birthday"
     ? { exported_by: actorId, campaign_type: selected.campaignType, birthdate_filter: selected.birthdayPlaceholderDate, contact_count: selected.rows.length, architect_contact_count: selected.architectContactCount, birthday_contact_count: selected.birthdayContactCount }
-    : { exported_by: actorId, campaign_type: selected.campaignType, state: request.state.trim(), serial_start: first.serial_no, serial_end: last.serial_no, contact_count: selected.rows.length };
+    : { exported_by: actorId, campaign_type: selected.campaignType, state: request.state.trim(), serial_start: request.startingSerial, serial_end: last.serial_no, contact_count: selected.rows.length };
   const { data: log, error: logError } = await admin.from("architect_export_logs").insert(logData).select("id").single();
   if (logError || !log) throw new Error(logError?.message ?? "Could not record export");
   const { data: campaign, error: campaignError } = await admin.from("campaigns").insert({
-    name: campaignName(request.mode === "birthday" ? null : request.state.trim(), campaignDate, request.mode === "birthday" ? null : first.serial_no, request.mode === "birthday" ? null : last.serial_no, request.mode === "birthday"),
+    name: campaignName(request.mode === "birthday" ? null : request.state.trim(), campaignDate, request.mode === "birthday" ? null : request.startingSerial, request.mode === "birthday" ? null : last.serial_no, request.mode === "birthday"),
     campaign_type: selected.campaignType, source: request.mode === "birthday" ? "birthday" : "state_wise", account: request.account,
-    state: request.mode === "birthday" ? null : request.state.trim(), serial_start: request.mode === "birthday" ? null : first.serial_no, serial_end: request.mode === "birthday" ? null : last.serial_no,
+    state: request.mode === "birthday" ? null : request.state.trim(), serial_start: request.mode === "birthday" ? null : request.startingSerial, serial_end: request.mode === "birthday" ? null : last.serial_no,
     csv_export_id: log.id, campaign_date: campaignDate, created_by: actorId, assigned_to: actorId,
-    retarget_name: `${request.mode === "birthday" ? "Belated" : "Retarget"}_${campaignName(request.mode === "birthday" ? null : request.state.trim(), campaignDate, request.mode === "birthday" ? null : first.serial_no, request.mode === "birthday" ? null : last.serial_no, request.mode === "birthday")}`,
+    retarget_name: `${request.mode === "birthday" ? "Belated" : "Retarget"}_${campaignName(request.mode === "birthday" ? null : request.state.trim(), campaignDate, request.mode === "birthday" ? null : request.startingSerial, request.mode === "birthday" ? null : last.serial_no, request.mode === "birthday")}`,
     retarget_due_date: followingMonday(campaignDate),
   }).select("id").single();
   if (campaignError || !campaign) { await admin.from("architect_export_logs").delete().eq("id", log.id); throw new Error(campaignError?.message ?? "Could not create campaign"); }
