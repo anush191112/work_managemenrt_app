@@ -13,7 +13,6 @@ function validContact(contact: ExportContact, type: CampaignType) { return type 
 function csvCell(value: string | null) { return `"${(value ?? "").replaceAll('"', '""')}"`; }
 function csvFor(rows: ExportContact[]) { return ["Name,Phone Number,Country Code,Email Address,Address", ...rows.map((row) => [formatExportName(row.name), row.phone, "91", row.email, row.address].map(csvCell).join(","))].join("\r\n"); }
 
-function stateAbbreviation(state: string) { return state.trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3) || "STATE"; }
 function birthdaySelection(value: string) {
   const match = value.match(/^(\d{2})-(\d{2})$/);
   if (!match) throw new Error("Birthday must use DD-MM");
@@ -31,10 +30,19 @@ export async function selectArchitects(request: ExportRequest) {
   let campaignType: CampaignType;
   if (request.mode === "state_wise") {
     campaignType = request.campaignType;
-    const { data, error } = await admin.from("architects").select("id, state, serial_no, name, phone, email, address, birthdate").eq("state", request.state.trim()).gte("serial_no", request.startingSerial).order("serial_no").range(0, 9_999);
-    if (error) throw new Error(error.message);
-    allRows = ((data ?? []) as Architect[]).map((row) => ({ ...row, source: "architect" }));
     if (!Number.isInteger(request.count) || request.count < 1) throw new Error("Count must be a positive whole number");
+    if (!Number.isInteger(request.startingSerial) || request.startingSerial < 1) throw new Error("Starting state serial number must be a positive whole number");
+    if (!isIsoDate(request.campaignDate)) throw new Error("Campaign date must be a valid date");
+    const stateRows: Architect[] = [];
+    const pageSize = 1_000;
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await admin.from("architects").select("id, state, serial_no, name, phone, email, address, birthdate").eq("state", request.state.trim()).order("serial_no").range(offset, offset + pageSize - 1);
+      if (error) throw new Error(error.message);
+      stateRows.push(...((data ?? []) as Architect[]));
+      if ((data ?? []).length < pageSize) break;
+    }
+    // The source serial number is global. Exports use each state's own 1-based sequence.
+    allRows = stateRows.slice(request.startingSerial - 1).map((row, index) => ({ ...row, serial_no: request.startingSerial + index, source: "architect" }));
     const phones = [...new Set(allRows.flatMap((row) => row.phone ? [normalizePhone(row.phone)] : []).filter((phone): phone is string => Boolean(phone)))];
     const { data: suppressions, error: suppressionError } = phones.length ? await admin.from("contact_suppressions").select("phone").in("phone", phones) : { data: [], error: null };
     if (suppressionError) throw new Error(suppressionError.message);
@@ -69,7 +77,7 @@ export async function selectArchitects(request: ExportRequest) {
     duplicates = (oldItems ?? []).map((item) => ({ architectId: item.architect_id, exportedAt: loggedAt.get(item.export_id) ?? "" }));
   }
   const birthday = request.mode === "birthday" ? birthdaySelection(request.targetDate) : null;
-  const filename = request.mode === "state_wise" ? `${stateAbbreviation(request.state)}_${request.startingSerial}-${allRows.at(-1)?.serial_no}.csv` : `BIRTHDAY_${request.targetDate}.csv`;
+  const filename = request.mode === "state_wise" ? `${campaignName(request.state.trim(), request.campaignDate as string, request.startingSerial, allRows.at(-1)?.serial_no ?? null)}.csv` : `BIRTHDAY_${request.targetDate}.csv`;
   const architectContactCount = allRows.filter((row) => row.source === "architect").length;
   return { rows: allRows, campaignType, duplicates, filename, csv: csvFor(allRows), architectContactCount, birthdayContactCount: allRows.length - architectContactCount, birthdayCampaignDate: birthday?.campaignDate, birthdayPlaceholderDate: birthday?.placeholderDate };
 }
