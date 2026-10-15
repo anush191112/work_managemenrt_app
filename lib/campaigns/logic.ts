@@ -44,7 +44,8 @@ export function campaignMetrics(input: Record<string, unknown>) {
   const totalLeads = [values.total_replies, values.total_instagram_clicks, values.total_whatsapp_channel_clicks, values.total_catalog_requests, values.total_inquiries].reduce<number>((sum, value) => sum + (value ?? 0), 0);
   const percentage = values.total_attempted && values.total_delivered_final !== null ? Number(((values.total_delivered_final / values.total_attempted) * 100).toFixed(2)) : null;
   const retargetCompletedOn = typeof input.retarget_completed_on === "string" && input.retarget_completed_on ? input.retarget_completed_on : null;
+  const retargetName = typeof input.retarget_name === "string" && input.retarget_name.trim() ? input.retarget_name.trim() : null;
   const campaignCompletedOn = typeof input.campaign_completed_on === "string" && input.campaign_completed_on ? input.campaign_completed_on : null;
   const required = [values.total_attempted, values.total_delivered_first, values.retarget_attempted, values.retarget_delivered, values.total_delivered_final, values.total_failed, values.total_replies, values.total_instagram_clicks, values.total_whatsapp_channel_clicks, values.total_catalog_requests, values.total_inquiries, retargetCompletedOn];
-  return { ...values, campaign_completed_on: campaignCompletedOn, retarget_completed_on: retargetCompletedOn, total_leads: totalLeads, percentage, stage: required.every((value) => value !== null) ? "complete" : "awaiting_completion" };
+  return { ...values, campaign_completed_on: campaignCompletedOn, retarget_name: retargetName, retarget_completed_on: retargetCompletedOn, total_leads: totalLeads, percentage, stage: required.every((value) => value !== null) ? "complete" : "awaiting_completion" };
 }
