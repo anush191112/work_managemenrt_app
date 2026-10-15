@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function BrandLogo({ compact = false }: { compact?: boolean }) {
-  return <img className={compact ? "brand-logo brand-logo-compact" : "brand-logo"} src="/stoneking-logo.png" alt="Stoneking" />;
+  return <Image className={compact ? "brand-logo brand-logo-sidebar" : "brand-logo"} src="/stoneking-logo.jpg" alt="Stoneking" width={5298} height={2317} priority />;
 }
