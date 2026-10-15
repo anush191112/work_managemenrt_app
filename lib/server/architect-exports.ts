@@ -43,8 +43,7 @@ export async function selectArchitects(request: ExportRequest) {
     }
     // The source serial number is global. Exports use each state's own 1-based sequence.
     allRows = stateRows.slice(request.startingSerial - 1).map((row, index) => ({ ...row, serial_no: request.startingSerial + index, source: "architect" }));
-    const phones = [...new Set(allRows.flatMap((row) => row.phone ? [normalizePhone(row.phone)] : []).filter((phone): phone is string => Boolean(phone)))];
-    const { data: suppressions, error: suppressionError } = phones.length ? await admin.from("contact_suppressions").select("phone").in("phone", phones) : { data: [], error: null };
+    const { data: suppressions, error: suppressionError } = await admin.from("contact_suppressions").select("phone");
     if (suppressionError) throw new Error(suppressionError.message);
     const blockedPhones = new Set((suppressions ?? []).map((row) => row.phone));
     allRows = allRows.filter((row) => validContact(row, campaignType) && !blockedPhones.has(normalizePhone(row.phone) ?? "")).slice(0, request.count);
@@ -60,7 +59,7 @@ export async function selectArchitects(request: ExportRequest) {
     const merged = new Map<string, ExportContact>();
     for (const row of (architectRows ?? []) as Architect[]) if (validContact({ ...row, source: "architect" }, campaignType) && row.phone) merged.set(row.phone, { ...row, source: "architect" });
     for (const row of birthdayRows ?? []) if (normalizePhone(row.phone)) merged.set(row.phone, { ...row, state: null, serial_no: null, source: "birthday_contact" });
-    const { data: suppressions, error: suppressionError } = merged.size ? await admin.from("contact_suppressions").select("phone").in("phone", [...merged.keys()]) : { data: [], error: null };
+    const { data: suppressions, error: suppressionError } = await admin.from("contact_suppressions").select("phone");
     if (suppressionError) throw new Error(suppressionError.message);
     const blockedPhones = new Set((suppressions ?? []).map((row) => row.phone));
     allRows = [...merged.values()].filter((row) => !blockedPhones.has(normalizePhone(row.phone) ?? ""));
