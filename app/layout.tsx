@@ -7,8 +7,8 @@ import "./globals.css";
 const inter = localFont({ src: "./fonts/InterVariable.woff2", variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Work Management",
-  description: "Employee task management",
+  title: "Outreach Desk",
+  description: "Stoneking outreach management",
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
