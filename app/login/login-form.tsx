@@ -39,7 +39,7 @@ export function LoginForm() {
         <input name="password" type="password" autoComplete="current-password" required />
       </label>
       {error ? <p className="error" role="alert">{error}</p> : null}
-      <button type="submit" disabled={isSubmitting}>
+      <button type="submit" className="primary-action login-submit" disabled={isSubmitting}>
         {isSubmitting ? "Signing in..." : "Sign in"}
       </button>
     </form>

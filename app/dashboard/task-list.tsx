@@ -145,7 +145,7 @@ export function TaskList({ tasks, isOwnDashboard, canManageTasks, templateHref }
             <div className="task-main">
               <div className="task-title-line">
                 <h2>{task.category === "lead_sheet" && (task.title === "Weekly Lead Sheet" || task.title === "Lead Sheet Backlog") ? <Link className="back-link" href={`/lead-sheets/${task.id}`}>{task.title}</Link> : task.title}</h2>
-                <span className={`status-dot status-${task.status}`} title={STATUS_LABELS[task.status]} />
+                <span className={`status-pill status-${task.status}`}>{STATUS_LABELS[task.status]}</span>
               </div>
               <p className="task-meta">
                 <span>{formatCategory(task.category)}</span>

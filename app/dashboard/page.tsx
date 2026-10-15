@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { LogOut } from "lucide-react";
-import Link from "next/link";
 import { getAuthenticatedUserId, getCurrentActor } from "@/lib/auth/current-actor";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -66,20 +65,9 @@ export default async function DashboardPage() {
         <div>
           <p className="eyebrow">{isManagerView ? "Team overview" : "My work"}</p>
           <h1>Today</h1>
-          <p className="dashboard-date">{date}</p>
+          <p className="dashboard-date">{new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date(`${date}T00:00:00+05:30`))} <span aria-hidden="true">·</span> {date}</p>
         </div>
         <div className="header-actions">
-          {isManagerView ? <Link className="back-link" href="/templates">Templates</Link> : null}
-          {isManagerView ? <Link className="back-link" href="/reports">Reports</Link> : null}
-          {isManagerView ? <Link className="back-link" href="/activity">Activity</Link> : null}
-          <Link className="back-link" href="/architect-export">Architect export</Link>
-          <Link className="back-link" href="/architect-import">Import architects</Link>
-          <Link className="back-link" href="/campaigns">Campaigns</Link>
-          <Link className="back-link" href="/leads">Leads</Link>
-          <Link className="back-link" href="/contact-preferences">Do not contact</Link>
-          {isManagerView ? <Link className="back-link" href="/export-audit">Export audit</Link> : null}
-          {actor.role === "admin" ? <Link className="back-link" href="/users">Users</Link> : null}
-          <Link className="back-link" href="/calendar">Calendar</Link>
           {isManagerView ? <GenerateTasksButton /> : null}
           {isManagerView ? <ManualTaskForm users={userRows ?? []} today={date} /> : null}
           <NotificationFeed notifications={notificationRows ?? []} />
