@@ -25,6 +25,9 @@ describe("campaign date rules", () => {
   it("uses stable short state codes for state-wise campaign names", () => {
     expect(stateCode("Maharashtra")).toBe("MH");
     expect(stateCode("Rajasthan")).toBe("RJ");
+    expect(stateCode("Chattisgarh")).toBe("CG");
+    expect(stateCode("Mumbai_Suburban")).toBe("MS");
+    expect(stateCode("Navi Mumbai")).toBe("NM");
     expect(campaignName("Maharashtra", "2026-10-17", 1, 500)).toBe("MH_17_OCT_1-500");
   });
 

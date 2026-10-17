@@ -11,11 +11,12 @@ function utcDate(value: string) { return new Date(`${value}T00:00:00.000Z`); }
 function iso(date: Date) { return date.toISOString().slice(0, 10); }
 
 const STATE_CODES: Record<string, string> = {
-  "andaman and nicobar islands": "AN", "andaman & nicobar": "AN", "andhra pradesh": "AP", "arunachal pradesh": "AR", "assam": "AS", "bihar": "BR", "chandigarh": "CH", "chhattisgarh": "CG", "dadra and nagar haveli": "DN", "daman and diu": "DD", "dadra and nagar haveli and daman and diu": "DH", "dadra & nagar haveli and daman & diu": "DH", "delhi": "DL", "nct of delhi": "DL", "goa": "GA", "gujarat": "GJ", "haryana": "HR", "himachal pradesh": "HP", "jammu and kashmir": "JK", "jammu & kashmir": "JK", "jharkhand": "JH", "karnataka": "KA", "kerala": "KL", "ladakh": "LA", "lakshadweep": "LD", "madhya pradesh": "MP", "maharashtra": "MH", "manipur": "MN", "meghalaya": "ML", "mizoram": "MZ", "nagaland": "NL", "odisha": "OD", "orissa": "OD", "puducherry": "PY", "pondicherry": "PY", "punjab": "PB", "rajasthan": "RJ", "sikkim": "SK", "tamil nadu": "TN", "telangana": "TS", "tripura": "TR", "uttar pradesh": "UP", "uttarakhand": "UK", "west bengal": "WB",
+  "alibaug": "AL", "andaman and nicobar islands": "AN", "andaman & nicobar": "AN", "andhra pradesh": "AP", "arunachal pradesh": "AR", "assam": "AS", "bihar": "BR", "chandigarh": "CH", "chhattisgarh": "CG", "chattisgarh": "CG", "dadra and nagar haveli": "DN", "daman and diu": "DD", "dadra and nagar haveli and daman and diu": "DH", "dadra & nagar haveli and daman & diu": "DH", "delhi": "DL", "nct of delhi": "DL", "goa": "GA", "gujarat": "GJ", "haryana": "HR", "himachal pradesh": "HP", "jammu and kashmir": "JK", "jammu & kashmir": "JK", "jharkhand": "JH", "karnataka": "KA", "kerala": "KL", "ladakh": "LA", "lakshadweep": "LD", "lonawala": "LO", "madhya pradesh": "MP", "maharashtra": "MH", "manipur": "MN", "meghalaya": "ML", "mizoram": "MZ", "mumbai": "MU", "mumbai suburban": "MS", "navi mumbai": "NM", "nagaland": "NL", "odisha": "OD", "orissa": "OD", "puducherry": "PY", "pondicherry": "PY", "punjab": "PB", "rajasthan": "RJ", "sikkim": "SK", "tamil nadu": "TN", "telangana": "TS", "tripura": "TR", "uttar pradesh": "UP", "uttarakhand": "UK", "west bengal": "WB",
 };
 
 export function stateCode(state: string): string {
-  const code = STATE_CODES[state.trim().toLowerCase()];
+  const normalizedState = state.trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+  const code = STATE_CODES[normalizedState];
   if (!code) throw new Error(`No campaign code is configured for ${state.trim()}`);
   return code;
 }
