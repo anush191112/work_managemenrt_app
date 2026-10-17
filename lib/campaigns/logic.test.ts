@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { campaignMetrics, followingMonday, mondayOfWeek } from "./logic";
+import { campaignMetrics, campaignName, followingMonday, mondayOfWeek, stateCode } from "./logic";
 
 describe("campaign date rules", () => {
   it("sets retarget due date to the following Monday for every day of a campaign week", () => {
@@ -20,5 +20,15 @@ describe("campaign date rules", () => {
     expect(result.total_leads).toBe(15);
     expect(result.percentage).toBe(95);
     expect(result.stage).toBe("complete");
+  });
+
+  it("uses stable short state codes for state-wise campaign names", () => {
+    expect(stateCode("Maharashtra")).toBe("MH");
+    expect(stateCode("Rajasthan")).toBe("RJ");
+    expect(campaignName("Maharashtra", "2026-10-17", 1, 500)).toBe("MH_17_OCT_1-500");
+  });
+
+  it("uses the campaign date in birthday campaign names", () => {
+    expect(campaignName(null, "2026-10-17", null, null, true)).toBe("bday_17_oct_2026");
   });
 });

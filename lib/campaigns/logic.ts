@@ -10,6 +10,16 @@ export const CAMPAIGN_ACCOUNTS: Array<{ value: CampaignAccount; label: string; t
 function utcDate(value: string) { return new Date(`${value}T00:00:00.000Z`); }
 function iso(date: Date) { return date.toISOString().slice(0, 10); }
 
+const STATE_CODES: Record<string, string> = {
+  "andaman and nicobar islands": "AN", "andaman & nicobar": "AN", "andhra pradesh": "AP", "arunachal pradesh": "AR", "assam": "AS", "bihar": "BR", "chandigarh": "CH", "chhattisgarh": "CG", "dadra and nagar haveli": "DN", "daman and diu": "DD", "dadra and nagar haveli and daman and diu": "DH", "dadra & nagar haveli and daman & diu": "DH", "delhi": "DL", "nct of delhi": "DL", "goa": "GA", "gujarat": "GJ", "haryana": "HR", "himachal pradesh": "HP", "jammu and kashmir": "JK", "jammu & kashmir": "JK", "jharkhand": "JH", "karnataka": "KA", "kerala": "KL", "ladakh": "LA", "lakshadweep": "LD", "madhya pradesh": "MP", "maharashtra": "MH", "manipur": "MN", "meghalaya": "ML", "mizoram": "MZ", "nagaland": "NL", "odisha": "OD", "orissa": "OD", "puducherry": "PY", "pondicherry": "PY", "punjab": "PB", "rajasthan": "RJ", "sikkim": "SK", "tamil nadu": "TN", "telangana": "TS", "tripura": "TR", "uttar pradesh": "UP", "uttarakhand": "UK", "west bengal": "WB",
+};
+
+export function stateCode(state: string): string {
+  const code = STATE_CODES[state.trim().toLowerCase()];
+  if (!code) throw new Error(`No campaign code is configured for ${state.trim()}`);
+  return code;
+}
+
 export function followingMonday(campaignDate: string): string {
   const date = utcDate(campaignDate);
   const day = date.getUTCDay();
@@ -30,8 +40,11 @@ export function addDays(dateValue: string, days: number): string {
 
 export function campaignName(state: string | null, campaignDate: string, serialStart: number | null, serialEnd: number | null, birthday = false): string {
   const date = utcDate(campaignDate);
-  const datePart = `${String(date.getUTCDate()).padStart(2, "0")}_${date.toLocaleString("en-US", { month: "short", timeZone: "UTC" }).toUpperCase()}`;
-  return birthday ? `BIRTHDAY_${datePart}` : `${state?.trim().toUpperCase()}_${datePart}_${serialStart}-${serialEnd}`;
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+  if (birthday) return `bday_${day}_${month.toLowerCase()}_${date.getUTCFullYear()}`;
+  const datePart = `${day}_${month.toUpperCase()}`;
+  return `${stateCode(state ?? "")}_${datePart}_${serialStart}-${serialEnd}`;
 }
 
 export function campaignMetrics(input: Record<string, unknown>) {

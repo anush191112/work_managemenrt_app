@@ -1,7 +1,8 @@
 import "server-only";
 import { campaignName, followingMonday } from "@/lib/campaigns/logic";
 import { accountMatchesType, isCampaignAccount, type CampaignType } from "@/lib/campaigns/types";
-import { formatExportName, isIsoDate, normalizeEmail, normalizePhone } from "@/lib/architects/normalization";
+import { isIsoDate, normalizeEmail, normalizePhone } from "@/lib/architects/normalization";
+import { buildExportCsv } from "@/lib/architects/export-csv";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type Architect = { id: string; state: string; serial_no: number; name: string; phone: string | null; email: string | null; address: string | null; birthdate: string | null };
@@ -9,9 +10,6 @@ type ExportContact = { id: string; source: "architect" | "birthday_contact"; sta
 export type ExportRequest = { mode: "state_wise"; campaignType: CampaignType; state: string; startingSerial: number; count: number; account?: unknown; campaignDate?: unknown } | { mode: "birthday"; targetDate: string; account?: unknown };
 
 function validContact(contact: ExportContact, type: CampaignType) { return type === "whatsapp" ? Boolean(normalizePhone(contact.phone)) : Boolean(normalizeEmail(contact.email)); }
-
-function csvCell(value: string | null) { return `"${(value ?? "").replaceAll('"', '""')}"`; }
-function csvFor(rows: ExportContact[]) { return ["Name,Phone Number,Country Code,Email Address,Address", ...rows.map((row) => [formatExportName(row.name), row.phone, "91", row.email, row.address].map(csvCell).join(","))].join("\r\n"); }
 
 function birthdaySelection(value: string) {
   const match = value.match(/^(\d{2})-(\d{2})$/);
@@ -76,9 +74,11 @@ export async function selectArchitects(request: ExportRequest) {
     duplicates = (oldItems ?? []).map((item) => ({ architectId: item.architect_id, exportedAt: loggedAt.get(item.export_id) ?? "" }));
   }
   const birthday = request.mode === "birthday" ? birthdaySelection(request.targetDate) : null;
-  const filename = request.mode === "state_wise" ? `${campaignName(request.state.trim(), request.campaignDate as string, request.startingSerial, allRows.at(-1)?.serial_no ?? null)}.csv` : `BIRTHDAY_${request.targetDate}.csv`;
+  const filename = request.mode === "state_wise"
+    ? `${campaignName(request.state.trim(), request.campaignDate as string, request.startingSerial, allRows.at(-1)?.serial_no ?? null)}.csv`
+    : `${campaignName(null, birthday!.campaignDate, null, null, true)}.csv`;
   const architectContactCount = allRows.filter((row) => row.source === "architect").length;
-  return { rows: allRows, campaignType, duplicates, filename, csv: csvFor(allRows), architectContactCount, birthdayContactCount: allRows.length - architectContactCount, birthdayCampaignDate: birthday?.campaignDate, birthdayPlaceholderDate: birthday?.placeholderDate };
+  return { rows: allRows, campaignType, duplicates, filename, csv: buildExportCsv(allRows, campaignType), architectContactCount, birthdayContactCount: allRows.length - architectContactCount, birthdayCampaignDate: birthday?.campaignDate, birthdayPlaceholderDate: birthday?.placeholderDate };
 }
 
 export async function createExport(actorId: string, request: ExportRequest) {
