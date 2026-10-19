@@ -11,17 +11,19 @@ export function CreateUserForm() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = event.currentTarget; const fields = new FormData(form);
-    setBusy(true); setError(null);
+    setBusy(true); setError(null); setMessage(null);
     const response = await fetch("/api/admin/users", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: fields.get("name"), email: fields.get("email"), password: fields.get("password") }) });
     const result = await response.json(); setBusy(false);
     if (!response.ok) { setError(result.error ?? "Could not create user"); return; }
+    setMessage(result.restored ? "The existing sign-in was restored and is ready to use." : "User created successfully.");
     form.reset(); router.refresh();
   }
   return <form className="create-user-form" onSubmit={submit}>
     <label>Name<input name="name" required /></label><label>Email<input name="email" type="email" required /></label><label>Temporary password<input name="password" type="password" minLength={8} required /></label>
-    {error ? <p className="error" role="alert">{error}</p> : null}<button className="primary-action" disabled={busy}>{busy ? "Creating" : "Create user"}</button>
+    {error ? <p className="error" role="alert">{error}</p> : null}{message ? <p className="success-message" role="status">{message}</p> : null}<button className="primary-action" disabled={busy}>{busy ? "Creating" : "Create user"}</button>
   </form>;
 }
 
