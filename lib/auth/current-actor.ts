@@ -5,6 +5,7 @@ import type { UserRole } from "@/lib/task-engine/types";
 
 export interface CurrentActor {
   id: string;
+  name: string;
   role: UserRole;
 }
 
@@ -24,7 +25,7 @@ export async function getCurrentActor(): Promise<CurrentActor | null> {
 
   const { data: profile, error } = await createAdminClient()
     .from("users")
-    .select("id, role")
+    .select("id, name, role")
     .eq("id", userId)
     .single();
 
