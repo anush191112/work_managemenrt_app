@@ -10,7 +10,7 @@ export default async function LeadsPage() {
 
   const { data } = await createAdminClient()
     .from("leads")
-    .select("id, name, phone, account, purpose, engagement_tag, touch_count, last_marked_at")
+    .select("id, name, phone, account, purpose, engagement_tag, touch_count, created_at, last_marked_at")
     .order("last_marked_at", { ascending: false })
     .limit(5);
 

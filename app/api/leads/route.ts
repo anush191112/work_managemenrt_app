@@ -6,6 +6,30 @@ import { engagementTagForTouchCount } from "@/lib/leads/engagement";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const PURPOSES = ["requested_for_catalog", "casual_reply", "inquiry", "instagram_whatsapp_channel"];
+
+export async function GET(request: Request) {
+  const actor = await getCurrentActor();
+  if (!actor) return NextResponse.json({ error: "Authentication is required" }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const account = searchParams.get("account");
+  const limit = searchParams.get("limit") === "10" ? 10 : 5;
+  if (account && !isCampaignAccount(account)) {
+    return NextResponse.json({ error: "Choose a valid account" }, { status: 400 });
+  }
+
+  let query = createAdminClient()
+    .from("leads")
+    .select("id, name, phone, account, purpose, engagement_tag, touch_count, created_at, last_marked_at")
+    .order("last_marked_at", { ascending: false })
+    .limit(limit);
+  if (account) query = query.eq("account", account);
+
+  const { data, error } = await query;
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ leads: data ?? [] });
+}
+
 export async function POST(request: Request) {
   const actor = await getCurrentActor();
   if (!actor) return NextResponse.json({ error: "Authentication is required" }, { status: 401 });
