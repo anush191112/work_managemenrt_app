@@ -48,6 +48,17 @@ export function campaignName(state: string | null, campaignDate: string, serialS
   return `${stateCode(state ?? "")}_${datePart}_${serialStart}-${serialEnd}`;
 }
 
+function shortDate(value: string) {
+  const date = utcDate(value);
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" }).toLowerCase();
+  return `${day}_${month}`;
+}
+
+export function leadExportName(startDate: string | null, endDate: string): string {
+  return startDate ? `lead_${shortDate(startDate)}_to_${shortDate(endDate)}` : `lead_till_${shortDate(endDate)}`;
+}
+
 export function campaignMetrics(input: Record<string, unknown>) {
   const numericNames = ["total_attempted", "total_delivered_first", "retarget_attempted", "retarget_delivered", "total_delivered_final", "total_failed", "total_replies", "total_instagram_clicks", "total_whatsapp_channel_clicks", "total_catalog_requests", "total_inquiries"] as const;
   const values = Object.fromEntries(numericNames.map((name) => {

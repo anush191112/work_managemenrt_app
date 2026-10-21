@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { campaignMetrics, campaignName, followingMonday, mondayOfWeek, stateCode } from "./logic";
+import { campaignMetrics, campaignName, followingMonday, leadExportName, mondayOfWeek, stateCode } from "./logic";
 
 describe("campaign date rules", () => {
   it("sets retarget due date to the following Monday for every day of a campaign week", () => {
@@ -33,5 +33,10 @@ describe("campaign date rules", () => {
 
   it("uses the campaign date in birthday campaign names", () => {
     expect(campaignName(null, "2026-10-17", null, null, true)).toBe("bday_17_oct_2026");
+  });
+
+  it("names lead exports from their selected date range", () => {
+    expect(leadExportName(null, "2026-10-15")).toBe("lead_till_15_oct");
+    expect(leadExportName("2026-10-20", "2026-10-23")).toBe("lead_20_oct_to_23_oct");
   });
 });

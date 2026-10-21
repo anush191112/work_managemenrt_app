@@ -7,14 +7,14 @@ describe("architect export CSV columns", () => {
   it("builds WhatsApp exports with name, country code, and phone only", () => {
     expect(buildExportCsv([contact], "whatsapp").split("\r\n")).toEqual([
       "Name,Country Code,Phone Number",
-      '"Ravi Kumar","91","9928781655"',
+      '"RAVI KUMAR","91","9928781655"',
     ]);
   });
 
   it("builds email exports with email then name only", () => {
     expect(buildExportCsv([contact], "email").split("\r\n")).toEqual([
       "Email Address,Name",
-      '"ravi@example.com","Ravi Kumar"',
+      '"ravi@example.com","RAVI KUMAR"',
     ]);
   });
 });

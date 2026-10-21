@@ -15,7 +15,7 @@ export default async function LeadsPage() {
     .limit(5);
 
   return <main>
-    <header className="page-header"><div><p className="eyebrow">Inbox</p><h1>Lead entry</h1></div><Link className="back-link" href="/dashboard">Back to today</Link></header>
+    <header className="page-header"><div><p className="eyebrow">Inbox</p><h1>Lead entry</h1></div><div className="header-actions"><Link className="primary-action" href="/lead-export">Export leads</Link><Link className="back-link" href="/dashboard">Back to today</Link></div></header>
     <div className="lead-entry-layout">
       <LeadEntryForm />
       <RecentLeads leads={(data ?? []) as RecentLead[]} />

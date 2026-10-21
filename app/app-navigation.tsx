@@ -13,7 +13,7 @@ type Item = { href: string; label: string; icon: typeof LayoutDashboard; roles?:
 
 const groups: Array<{ label: string; items: Item[] }> = [
   { label: "Work", items: [{ href: "/dashboard", label: "Today", icon: LayoutDashboard }, { href: "/templates", label: "Templates", icon: ClipboardList, roles: ["admin", "manager"] }, { href: "/calendar", label: "Calendar", icon: CalendarDays }] },
-  { label: "Campaigns", items: [{ href: "/campaigns", label: "Campaigns", icon: ContactRound }, { href: "/leads", label: "Leads", icon: ContactRound }, { href: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] }, { href: "/activity", label: "Activity", icon: Activity, roles: ["admin", "manager"] }] },
+  { label: "Campaigns", items: [{ href: "/campaigns", label: "Campaigns", icon: ContactRound }, { href: "/leads", label: "Leads", icon: ContactRound }, { href: "/lead-export", label: "Lead CSV export", icon: FileDown }, { href: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] }, { href: "/activity", label: "Activity", icon: Activity, roles: ["admin", "manager"] }] },
   { label: "Architect database", items: [{ href: "/architect-import", label: "Import architects", icon: FileUp }, { href: "/architect-export", label: "CSV export", icon: FileDown }, { href: "/contact-preferences", label: "Do not contact", icon: ShieldBan }, { href: "/export-audit", label: "Export audit", icon: ClipboardList, roles: ["admin", "manager"] }] },
   { label: "Admin", items: [{ href: "/users", label: "Users", icon: Users, roles: ["admin"] }] },
 ];

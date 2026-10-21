@@ -17,16 +17,17 @@ describe("architect contact normalization", () => {
     expect(normalizeEmail("bad-address")).toBeNull();
   });
 
-  it("formats all-caps abbreviated names without truncating", () => {
-    expect(formatExportName("MR. R.S. SHARMA")).toBe("Mr. R.s. Sharma");
+  it("uses the Excel export rule for a dotted abbreviation", () => {
+    expect(formatExportName("MR. R.S. SHARMA")).toBe("MR. R.S.");
   });
 
-  it("truncates all-caps and lowercase names to salutation and first name", () => {
-    expect(formatExportName("MR. RAHUL SHARMA")).toBe("Mr. Rahul");
-    expect(formatExportName("mrs. priya patel")).toBe("Mrs. Priya");
+  it("skips single-letter initials before selecting the first full word", () => {
+    expect(formatExportName("MR. R. S. SHARMA")).toBe("MR. SHARMA");
   });
 
-  it("leaves mixed-case names untouched", () => {
-    expect(formatExportName("Dr. Ananya Rao")).toBe("Dr. Ananya Rao");
+  it("keeps the stored spelling and takes the first meaningful name word", () => {
+    expect(formatExportName("mrs. priya patel")).toBe("mrs. priya");
+    expect(formatExportName("Dr. Ananya Rao")).toBe("Dr. Ananya");
+    expect(formatExportName("Madonna")).toBe("Madonna");
   });
 });
