@@ -39,8 +39,8 @@ export async function selectArchitects(request: ExportRequest) {
       stateRows.push(...((data ?? []) as Architect[]));
       if ((data ?? []).length < pageSize) break;
     }
-    // The source serial number is global. Exports use each state's own 1-based sequence.
-    allRows = stateRows.slice(request.startingSerial - 1).map((row, index) => ({ ...row, serial_no: request.startingSerial + index, source: "architect" }));
+    // State serial numbers are the canonical export range. They can contain gaps when rows are added later.
+    allRows = stateRows.filter((row) => row.serial_no >= request.startingSerial).map((row) => ({ ...row, source: "architect" }));
     const { data: suppressions, error: suppressionError } = await admin.from("contact_suppressions").select("phone");
     if (suppressionError) throw new Error(suppressionError.message);
     const blockedPhones = new Set((suppressions ?? []).map((row) => row.phone));

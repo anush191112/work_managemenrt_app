@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   if (existing) {
     const touchCount = existing.touch_count + 1;
     const tag = engagementTagForTouchCount(touchCount);
-    const { error: updateError } = await admin.from("leads").update({ touch_count: touchCount, engagement_tag: tag, last_marked_at: new Date().toISOString(), last_marked_by: actor.id }).eq("id", existing.id);
+    const { error: updateError } = await admin.from("leads").update({ account: body.account, purpose: body.purpose, touch_count: touchCount, engagement_tag: tag, last_marked_at: new Date().toISOString(), last_marked_by: actor.id }).eq("id", existing.id);
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 });
     const { error: interactionError } = await admin.from("lead_interactions").insert({ lead_id: existing.id, reported_name: name, account: body.account, purpose: body.purpose, marked_by: actor.id });
     if (interactionError) return NextResponse.json({ error: interactionError.message }, { status: 400 });
