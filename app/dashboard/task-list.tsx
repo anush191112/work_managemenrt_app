@@ -5,6 +5,7 @@ import { CircleAlert, Image, RefreshCw, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { TaskPriority, TaskStatus } from "@/lib/task-engine/types";
+import { DeleteTaskButton } from "@/app/tasks/delete-task-button";
 
 export interface DashboardTask {
   id: string;
@@ -70,7 +71,7 @@ export function GenerateTasksButton() {
   );
 }
 
-export function TaskList({ tasks, isOwnDashboard, canManageTasks, templateHref }: { tasks: DashboardTask[]; isOwnDashboard: boolean; canManageTasks: boolean; templateHref?: string }) {
+export function TaskList({ tasks, isOwnDashboard, canManageTasks, canDeleteTasks, templateHref }: { tasks: DashboardTask[]; isOwnDashboard: boolean; canManageTasks: boolean; canDeleteTasks: boolean; templateHref?: string }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -187,6 +188,7 @@ export function TaskList({ tasks, isOwnDashboard, canManageTasks, templateHref }
               ) : null}
               {task.proofUrls.length ? <details className="proof-preview"><summary className="icon-button" title="View proof" aria-label="View proof"><Image size={17} aria-hidden="true" /></summary><div className="proof-panel">{task.proofUrls.map((url, index) => <a href={url} key={url} target="_blank" rel="noreferrer"><img src={url} alt={`Proof ${index + 1} for ${task.title}`} /></a>)}</div></details> : null}
               {task.requires_proof ? <span className="proof-state">Proof {task.proofCount ? "added" : "required"}</span> : null}
+              {canDeleteTasks ? <DeleteTaskButton taskId={task.id} taskTitle={task.title} /> : null}
             </div>
 
             {task.is_pool_task ? <p className="pool-progress">Ongoing pool · {Math.max(0, (task.pool_target_total ?? 0) - task.quantity_done)} remaining</p> : null}

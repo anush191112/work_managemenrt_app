@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentActor } from "@/lib/auth/current-actor";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isValidQuantityDone } from "@/lib/task-engine/task-progress";
 import type { TaskStatus } from "@/lib/task-engine/types";
 
@@ -58,4 +59,23 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/tas
   }
 
   return NextResponse.json({ task: data });
+}
+
+export async function DELETE(_request: Request, { params }: RouteContext<"/api/tasks/[id]">) {
+  const actor = await getCurrentActor();
+  if (actor?.role !== "admin") return NextResponse.json({ error: "Only admins can delete tasks" }, { status: 403 });
+
+  const { id } = await params;
+  const admin = createAdminClient();
+  const { data: task, error: taskError } = await admin.from("tasks").select("id, task_proofs(file_url)").eq("id", id).maybeSingle();
+  if (taskError || !task) return NextResponse.json({ error: taskError?.message ?? "Task was not found" }, { status: 404 });
+
+  const proofPaths = ((task.task_proofs ?? []) as Array<{ file_url: string }>).map((proof) => proof.file_url);
+  if (proofPaths.length) {
+    const { error: storageError } = await admin.storage.from("task-proofs").remove(proofPaths);
+    if (storageError) return NextResponse.json({ error: storageError.message }, { status: 400 });
+  }
+  const { error } = await admin.from("tasks").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ deleted: true });
 }

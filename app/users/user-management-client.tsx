@@ -15,14 +15,14 @@ export function CreateUserForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = event.currentTarget; const fields = new FormData(form);
     setBusy(true); setError(null); setMessage(null);
-    const response = await fetch("/api/admin/users", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: fields.get("name"), email: fields.get("email"), password: fields.get("password") }) });
+    const response = await fetch("/api/admin/users", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: fields.get("name"), email: fields.get("email"), password: fields.get("password"), role: fields.get("role") }) });
     const result = await response.json(); setBusy(false);
     if (!response.ok) { setError(result.error ?? "Could not create user"); return; }
     setMessage(result.restored ? "The existing sign-in was restored and is ready to use." : "User created successfully.");
     form.reset(); router.refresh();
   }
   return <form className="create-user-form" onSubmit={submit}>
-    <label>Name<input name="name" required /></label><label>Email<input name="email" type="email" required /></label><label>Temporary password<input name="password" type="password" minLength={8} required /></label>
+    <label>Name<input name="name" required /></label><label>Email<input name="email" type="email" required /></label><label>Temporary password<input name="password" type="password" minLength={8} required /></label><label>Access level<select name="role" defaultValue="employee"><option value="employee">Employee</option><option value="manager">Manager</option><option value="admin">Admin</option></select></label>
     {error ? <p className="error" role="alert">{error}</p> : null}{message ? <p className="success-message" role="status">{message}</p> : null}<button className="primary-action" disabled={busy}>{busy ? "Creating" : "Create user"}</button>
   </form>;
 }
@@ -36,7 +36,7 @@ export function UserList({ users }: { users: ManagedUser[] }) {
   return <div className="user-list">{error ? <p className="error" role="alert">{error}</p> : null}{users.map((user) => <article className="user-row" key={user.id}>
     <div><strong>{user.name}</strong><span>{user.email}</span></div>
     <label>Role<select value={user.role} disabled={busyId === user.id} onChange={(event) => update(user.id, { role: event.target.value })}><option value="admin">Admin</option><option value="manager">Manager</option><option value="employee">Employee</option></select></label>
-    <label>Manager<select value={user.manager_id ?? ""} disabled={busyId === user.id} onChange={(event) => update(user.id, { manager_id: event.target.value || null })}><option value="">None</option>{users.filter((candidate) => candidate.id !== user.id && candidate.role === "manager").map((manager) => <option key={manager.id} value={manager.id}>{manager.name}</option>)}</select></label>
+    <label>Manager<select value={user.manager_id ?? ""} disabled={busyId === user.id} onChange={(event) => update(user.id, { manager_id: event.target.value || null })}><option value="">None</option>{users.filter((candidate) => candidate.id !== user.id && (candidate.role === "manager" || candidate.role === "admin")).map((manager) => <option key={manager.id} value={manager.id}>{manager.name}{manager.role === "admin" ? " (Admin)" : ""}</option>)}</select></label>
     <label>Work days<div className="workdays">{DAYS.map((day, index) => <label key={day}><input type="checkbox" defaultChecked={user.work_days.includes(index)} onChange={(event) => { const days = new Set(user.work_days); event.target.checked ? days.add(index) : days.delete(index); if (days.size) update(user.id, { work_days: [...days].sort() }); }} disabled={busyId === user.id} />{day}</label>)}</div></label>
   </article>)}</div>;
 }

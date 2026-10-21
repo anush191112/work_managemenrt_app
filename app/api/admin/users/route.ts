@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentActor } from "@/lib/auth/current-actor";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { UserRole } from "@/lib/task-engine/types";
+
+const ROLES: UserRole[] = ["admin", "manager", "employee"];
 
 function isExistingEmailError(message: string | undefined) {
   return /already.*(?:registered|exists)|duplicate/i.test(message ?? "");
@@ -35,6 +38,7 @@ export async function POST(request: Request) {
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
+  const role = typeof body?.role === "string" && ROLES.includes(body.role as UserRole) ? body.role as UserRole : "employee";
   if (!email || !name || password.length < 8) {
     return NextResponse.json({ error: "Enter a name, a valid email, and a password of at least 8 characters" }, { status: 400 });
   }
@@ -44,6 +48,12 @@ export async function POST(request: Request) {
     email, password, email_confirm: true, user_metadata: { name },
   });
   if (!error && data.user) {
+    const { data: profile, error: profileError } = await admin.from("users").update({ role }).eq("id", data.user.id).select("id").maybeSingle();
+    if (profileError) return NextResponse.json({ error: profileError.message }, { status: 400 });
+    if (!profile) {
+      const { error: insertError } = await admin.from("users").insert({ id: data.user.id, name, email, role });
+      if (insertError) return NextResponse.json({ error: insertError.message }, { status: 400 });
+    }
     return NextResponse.json({ user: { id: data.user.id, email: data.user.email } }, { status: 201 });
   }
 
@@ -82,7 +92,7 @@ export async function POST(request: Request) {
 
   const { error: restoreError } = await admin
     .from("users")
-    .insert({ id: existing.user.id, name, email });
+    .insert({ id: existing.user.id, name, email, role });
   if (restoreError) {
     return NextResponse.json({ error: restoreError.message }, { status: 400 });
   }

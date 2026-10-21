@@ -81,7 +81,7 @@ export default async function DashboardPage() {
         <span>{displayTasks.filter((task) => task.status === "done").length} completed</span>
         <span>{displayTasks.filter((task) => task.has_blocker).length} blocked</span>
       </section>
-      <TaskList tasks={displayTasks} isOwnDashboard={!isManagerView} canManageTasks templateHref={isManagerView ? "/templates" : undefined} />
+      <TaskList tasks={displayTasks} isOwnDashboard={!isManagerView} canManageTasks canDeleteTasks={actor.role === "admin"} templateHref={isManagerView ? "/templates" : undefined} />
     </main>
   );
 }
