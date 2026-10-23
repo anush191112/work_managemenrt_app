@@ -151,6 +151,7 @@ export function TaskList({ tasks, isOwnDashboard, canManageTasks, canDeleteTasks
               <p className="task-meta">
                 <span>{formatCategory(task.category)}</span>
                 {!isOwnDashboard ? <span>{task.assignedToName}</span> : null}
+                {task.is_pool_task && task.status !== "done" ? <span>Start date: {task.scheduled_date}</span> : null}
                 {task.deadline_time ? <span>Due {task.deadline_time.slice(0, 5)}</span> : null}
                 {task.carried_forward_from ? <span>Moved from {task.carried_forward_from}</span> : null}
               </p>
@@ -171,14 +172,14 @@ export function TaskList({ tasks, isOwnDashboard, canManageTasks, canDeleteTasks
                   <span>of {task.is_pool_task ? task.pool_target_total : task.quantity_required}</span>
                 </label>
               ) : null}
-              {!task.is_pool_task ? <select
+              <select
                 aria-label={`Status for ${task.title}`}
                 value={task.status}
                 onChange={(event) => patchTask(task.id, { status: event.target.value })}
                 disabled={!canManageTasks || busy}
               >
                 {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select> : null}
+              </select>
               {isOwnDashboard ? (
                 <label className="icon-button" title="Upload proof">
                   <Upload size={17} aria-hidden="true" />

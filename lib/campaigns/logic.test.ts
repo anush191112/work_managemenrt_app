@@ -26,9 +26,18 @@ describe("campaign date rules", () => {
     expect(stateCode("Maharashtra")).toBe("MH");
     expect(stateCode("Rajasthan")).toBe("RJ");
     expect(stateCode("Chattisgarh")).toBe("CG");
+    expect(stateCode("Daman & Diu")).toBe("DD");
+    expect(stateCode("Dadar & Nagar Haveli")).toBe("DN");
+    expect(stateCode("Jammu&Kashmir")).toBe("JK");
     expect(stateCode("Mumbai_Suburban")).toBe("MS");
     expect(stateCode("Navi Mumbai")).toBe("NM");
     expect(campaignName("Maharashtra", "2026-10-17", 1, 500)).toBe("MH_17_OCT_1-500");
+  });
+
+  it("derives total delivered and failed from campaign delivery values", () => {
+    const result = campaignMetrics({ total_attempted: 100, total_delivered_first: 80, retarget_delivered: 15 });
+    expect(result.total_delivered_final).toBe(95);
+    expect(result.total_failed).toBe(5);
   });
 
   it("uses the campaign date in birthday campaign names", () => {

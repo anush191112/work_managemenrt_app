@@ -19,7 +19,8 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/tas
   }
 
   const updates: Record<string, number | TaskStatus> = {};
-  if (TASK_STATUSES.includes(body.status)) {
+  const hasExplicitStatus = TASK_STATUSES.includes(body.status);
+  if (hasExplicitStatus) {
     updates.status = body.status;
   }
   if (Number.isInteger(body.quantity_done) && body.quantity_done >= 0) {
@@ -31,7 +32,7 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/tas
 
   const supabase = await createClient();
   const { data: task, error: taskError } = await supabase.from("tasks")
-    .select("quantity_required, quantity_done, is_pool_task, pool_target_total")
+    .select("quantity_required, quantity_done, status, is_pool_task, pool_target_total")
     .eq("id", id)
     .single();
   if (taskError || !task) return NextResponse.json({ error: taskError?.message ?? "Task was not found" }, { status: 400 });
@@ -41,11 +42,12 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/tas
   if (typeof updates.quantity_done === "number" && !isValidQuantityDone(nextQuantityDone, targetQuantity)) {
       return NextResponse.json({ error: "Progress cannot exceed the required quantity" }, { status: 400 });
   }
-  if (task.is_pool_task && targetQuantity !== null) {
-    if (updates.status === "done" && nextQuantityDone < targetQuantity) {
-      return NextResponse.json({ error: "Pool tasks complete automatically when their target is reached" }, { status: 400 });
+  if (typeof updates.quantity_done === "number" && !hasExplicitStatus) {
+    if (targetQuantity !== null && nextQuantityDone === targetQuantity) {
+      updates.status = "done";
+    } else if (nextQuantityDone > 0 && task.status === "not_started") {
+      updates.status = "in_progress";
     }
-    if (nextQuantityDone === targetQuantity) updates.status = "done";
   }
   const { data, error } = await supabase
     .from("tasks")

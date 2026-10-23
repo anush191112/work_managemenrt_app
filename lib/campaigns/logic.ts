@@ -11,11 +11,11 @@ function utcDate(value: string) { return new Date(`${value}T00:00:00.000Z`); }
 function iso(date: Date) { return date.toISOString().slice(0, 10); }
 
 const STATE_CODES: Record<string, string> = {
-  "alibaug": "AL", "andaman and nicobar islands": "AN", "andaman & nicobar": "AN", "andhra pradesh": "AP", "arunachal pradesh": "AR", "assam": "AS", "bihar": "BR", "chandigarh": "CH", "chhattisgarh": "CG", "chattisgarh": "CG", "dadra and nagar haveli": "DN", "daman and diu": "DD", "dadra and nagar haveli and daman and diu": "DH", "dadra & nagar haveli and daman & diu": "DH", "delhi": "DL", "nct of delhi": "DL", "goa": "GA", "gujarat": "GJ", "haryana": "HR", "himachal pradesh": "HP", "jammu and kashmir": "JK", "jammu & kashmir": "JK", "jharkhand": "JH", "karnataka": "KA", "kerala": "KL", "ladakh": "LA", "lakshadweep": "LD", "lonawala": "LO", "madhya pradesh": "MP", "maharashtra": "MH", "manipur": "MN", "meghalaya": "ML", "mizoram": "MZ", "mumbai": "MU", "mumbai suburban": "MS", "navi mumbai": "NM", "nagaland": "NL", "odisha": "OD", "orissa": "OD", "puducherry": "PY", "pondicherry": "PY", "punjab": "PB", "rajasthan": "RJ", "sikkim": "SK", "tamil nadu": "TN", "telangana": "TS", "tripura": "TR", "uttar pradesh": "UP", "uttarakhand": "UK", "west bengal": "WB",
+  "alibaug": "AL", "andaman and nicobar islands": "AN", "andaman and nicobar": "AN", "andhra pradesh": "AP", "arunachal pradesh": "AR", "assam": "AS", "bihar": "BR", "chandigarh": "CH", "chhattisgarh": "CG", "chattisgarh": "CG", "dadra and nagar haveli": "DN", "dadar and nagar haveli": "DN", "daman and diu": "DD", "dadra and nagar haveli and daman and diu": "DH", "delhi": "DL", "nct of delhi": "DL", "goa": "GA", "gujarat": "GJ", "haryana": "HR", "himachal pradesh": "HP", "jammu and kashmir": "JK", "jharkhand": "JH", "karnataka": "KA", "kerala": "KL", "ladakh": "LA", "lakshadweep": "LD", "lonawala": "LO", "madhya pradesh": "MP", "maharashtra": "MH", "manipur": "MN", "meghalaya": "ML", "mizoram": "MZ", "mumbai": "MU", "mumbai suburban": "MS", "navi mumbai": "NM", "nagaland": "NL", "odisha": "OD", "orissa": "OD", "puducherry": "PY", "pondicherry": "PY", "punjab": "PB", "rajasthan": "RJ", "sikkim": "SK", "tamil nadu": "TN", "telangana": "TS", "tripura": "TR", "uttar pradesh": "UP", "uttarakhand": "UK", "west bengal": "WB",
 };
 
 export function stateCode(state: string): string {
-  const normalizedState = state.trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+  const normalizedState = state.trim().toLowerCase().replace(/&/g, " and ").replace(/[_-]+/g, " ").replace(/\s+/g, " ");
   const code = STATE_CODES[normalizedState];
   if (!code) throw new Error(`No campaign code is configured for ${state.trim()}`);
   return code;
@@ -60,17 +60,20 @@ export function leadExportName(startDate: string | null, endDate: string): strin
 }
 
 export function campaignMetrics(input: Record<string, unknown>) {
-  const numericNames = ["total_attempted", "total_delivered_first", "retarget_attempted", "retarget_delivered", "total_delivered_final", "total_failed", "total_replies", "total_instagram_clicks", "total_whatsapp_channel_clicks", "total_catalog_requests", "total_inquiries"] as const;
+  const numericNames = ["total_attempted", "total_delivered_first", "retarget_attempted", "retarget_delivered", "total_replies", "total_instagram_clicks", "total_whatsapp_channel_clicks", "total_catalog_requests", "total_inquiries"] as const;
   const values = Object.fromEntries(numericNames.map((name) => {
     const value = input[name];
     return [name, value === "" || value === null || value === undefined ? null : Number(value)];
   }));
   if (Object.values(values).some((value) => value !== null && (!Number.isInteger(value) || value < 0))) throw new Error("Metrics must be whole numbers of zero or more");
+  const totalDelivered = values.total_delivered_first === null && values.retarget_delivered === null ? null : (values.total_delivered_first ?? 0) + (values.retarget_delivered ?? 0);
+  const totalFailed = values.total_attempted === null || totalDelivered === null ? null : values.total_attempted - totalDelivered;
+  if (totalFailed !== null && totalFailed < 0) throw new Error("Total delivered cannot be greater than total attempted");
   const totalLeads = [values.total_replies, values.total_instagram_clicks, values.total_whatsapp_channel_clicks, values.total_catalog_requests, values.total_inquiries].reduce<number>((sum, value) => sum + (value ?? 0), 0);
-  const percentage = values.total_attempted && values.total_delivered_final !== null ? Number(((values.total_delivered_final / values.total_attempted) * 100).toFixed(2)) : null;
+  const percentage = values.total_attempted && totalDelivered !== null ? Number(((totalDelivered / values.total_attempted) * 100).toFixed(2)) : null;
   const retargetCompletedOn = typeof input.retarget_completed_on === "string" && input.retarget_completed_on ? input.retarget_completed_on : null;
   const retargetName = typeof input.retarget_name === "string" && input.retarget_name.trim() ? input.retarget_name.trim() : null;
   const campaignCompletedOn = typeof input.campaign_completed_on === "string" && input.campaign_completed_on ? input.campaign_completed_on : null;
-  const required = [values.total_attempted, values.total_delivered_first, values.retarget_attempted, values.retarget_delivered, values.total_delivered_final, values.total_failed, values.total_replies, values.total_instagram_clicks, values.total_whatsapp_channel_clicks, values.total_catalog_requests, values.total_inquiries, retargetCompletedOn];
-  return { ...values, campaign_completed_on: campaignCompletedOn, retarget_name: retargetName, retarget_completed_on: retargetCompletedOn, total_leads: totalLeads, percentage, stage: required.every((value) => value !== null) ? "complete" : "awaiting_completion" };
+  const required = [values.total_attempted, values.total_delivered_first, values.retarget_attempted, values.retarget_delivered, totalDelivered, totalFailed, values.total_replies, values.total_instagram_clicks, values.total_whatsapp_channel_clicks, values.total_catalog_requests, values.total_inquiries, retargetCompletedOn];
+  return { ...values, total_delivered_final: totalDelivered, total_failed: totalFailed, campaign_completed_on: campaignCompletedOn, retarget_name: retargetName, retarget_completed_on: retargetCompletedOn, total_leads: totalLeads, percentage, stage: required.every((value) => value !== null) ? "complete" : "awaiting_completion" };
 }
