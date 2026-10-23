@@ -59,7 +59,34 @@ export function leadExportName(startDate: string | null, endDate: string): strin
   return startDate ? `lead_${shortDate(startDate)}_to_${shortDate(endDate)}` : `lead_till_${shortDate(endDate)}`;
 }
 
-export function campaignMetrics(input: Record<string, unknown>) {
+export function campaignMetrics(input: Record<string, unknown>): Record<string, number | string | null> {
+  const campaignType = input.campaign_type;
+  if (campaignType === "email") {
+    const numericNames = ["total_attempted", "total_delivered_final", "total_failed", "total_leads"] as const;
+    const values = Object.fromEntries(numericNames.map((name) => {
+      const value = input[name];
+      return [name, value === "" || value === null || value === undefined ? null : Number(value)];
+    }));
+    if (Object.values(values).some((value) => value !== null && (!Number.isInteger(value) || value < 0))) throw new Error("Metrics must be whole numbers of zero or more");
+    if (values.total_attempted !== null && values.total_delivered_final !== null && values.total_delivered_final > values.total_attempted) throw new Error("Total delivered cannot be greater than total attempted");
+    const percentage = values.total_attempted && values.total_delivered_final !== null ? Number(((values.total_delivered_final / values.total_attempted) * 100).toFixed(2)) : null;
+    return {
+      ...values,
+      total_delivered_first: null,
+      retarget_attempted: null,
+      retarget_delivered: null,
+      total_replies: null,
+      total_instagram_clicks: null,
+      total_whatsapp_channel_clicks: null,
+      total_catalog_requests: null,
+      total_inquiries: null,
+      retarget_name: null,
+      retarget_completed_on: null,
+      campaign_completed_on: typeof input.campaign_date === "string" ? input.campaign_date : null,
+      percentage,
+      stage: "complete" as const,
+    };
+  }
   const numericNames = ["total_attempted", "total_delivered_first", "retarget_attempted", "retarget_delivered", "total_replies", "total_instagram_clicks", "total_whatsapp_channel_clicks", "total_catalog_requests", "total_inquiries"] as const;
   const values = Object.fromEntries(numericNames.map((name) => {
     const value = input[name];

@@ -9,7 +9,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!actor) return NextResponse.json({ error: "Authentication is required" }, { status: 401 });
   const { id } = await params;
   const admin = createAdminClient();
-  const { data: campaign, error: findError } = await admin.from("campaigns").select("id, created_by, assigned_to, is_shared").eq("id", id).maybeSingle();
+  const { data: campaign, error: findError } = await admin.from("campaigns").select("id, campaign_type, campaign_date, created_by, assigned_to, is_shared").eq("id", id).maybeSingle();
   if (findError || !campaign) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
   if (actor.role !== "admin" && !campaign.is_shared && campaign.assigned_to !== actor.id) {
     if (actor.role !== "manager") return NextResponse.json({ error: "Not allowed" }, { status: 403 });
@@ -17,7 +17,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (owner?.manager_id !== actor.id) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   }
   try {
-    const metrics = campaignMetrics(await request.json());
+    const metrics = campaignMetrics({ ...(await request.json()), campaign_type: campaign.campaign_type, campaign_date: campaign.campaign_date });
     const { data, error } = await admin.from("campaigns").update(metrics).eq("id", id).select("id, stage").single();
     if (error || !data) throw new Error(error?.message ?? "Could not update campaign");
     await reconcileCampaignTaskItems(id, data.stage === "complete");

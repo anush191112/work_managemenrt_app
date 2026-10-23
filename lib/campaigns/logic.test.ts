@@ -40,6 +40,11 @@ describe("campaign date rules", () => {
     expect(result.total_failed).toBe(5);
   });
 
+  it("keeps email campaigns as one-day completed campaigns", () => {
+    const result = campaignMetrics({ campaign_type: "email", campaign_date: "2026-10-23", total_attempted: 100, total_delivered_final: 90, total_failed: 10, total_leads: 3 });
+    expect(result).toMatchObject({ stage: "complete", campaign_completed_on: "2026-10-23", total_leads: 3, retarget_name: null });
+  });
+
   it("uses the campaign date in birthday campaign names", () => {
     expect(campaignName(null, "2026-10-17", null, null, true)).toBe("bday_17_oct_2026");
   });
