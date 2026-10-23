@@ -101,6 +101,7 @@ export async function createExport(actorId: string, request: ExportRequest) {
     campaign_type: selected.campaignType, source: request.mode === "birthday" ? "birthday" : "state_wise", account: request.account,
     state: request.mode === "birthday" ? null : request.state.trim(), serial_start: request.mode === "birthday" ? null : request.startingSerial, serial_end: request.mode === "birthday" ? null : last.serial_no,
     csv_export_id: log.id, campaign_date: campaignDate, created_by: actorId, assigned_to: actorId,
+    total_attempted: selected.rows.length,
     campaign_completed_on: selected.campaignType === "email" ? campaignDate : null,
     campaign_end_date: schedule?.campaignEndDate ?? null,
     retarget_name: selected.campaignType === "whatsapp" ? `${request.mode === "birthday" ? "Belated" : "Retarget"}_${campaignName(request.mode === "birthday" ? null : request.state.trim(), campaignDate, request.mode === "birthday" ? null : request.startingSerial, request.mode === "birthday" ? null : last.serial_no, request.mode === "birthday")}` : null,

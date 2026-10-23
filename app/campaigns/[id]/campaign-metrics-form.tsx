@@ -12,7 +12,7 @@ type EmailMetric = (typeof EMAIL_METRICS)[number][0];
 
 function numericValue(value: string): number { return value === "" ? 0 : Number(value); }
 
-export function CampaignMetricsForm({ campaign }: { campaign: Campaign }) {
+export function CampaignMetricsForm({ campaign, calculatedSchedule }: { campaign: Campaign; calculatedSchedule: boolean }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Record<InputMetric, string>>(() => Object.fromEntries(INPUT_METRICS.map(([name]) => [name, campaign[name]?.toString() ?? ""])) as Record<InputMetric, string>);
@@ -38,10 +38,8 @@ export function CampaignMetricsForm({ campaign }: { campaign: Campaign }) {
   </form>;
 
   return <form onSubmit={submit} className="metrics-form">
-    <label>Interakt retarget campaign name<input name="retarget_name" defaultValue={campaign.retarget_name ?? ""} /></label>
-    <label>Campaign completed on<input name="campaign_completed_on" type="date" defaultValue={campaign.campaign_completed_on ?? ""} /></label>
-    <label>Retarget completed on<input name="retarget_completed_on" type="date" defaultValue={campaign.retarget_completed_on ?? ""} /></label>
-    {INPUT_METRICS.map(([name, label]) => <label key={name}>{label}<input name={name} type="number" min="0" step="1" value={metrics[name]} onChange={(event) => setMetrics((current) => ({ ...current, [name]: event.target.value }))} /></label>)}
+    {!calculatedSchedule ? <><label>Interakt retarget campaign name<input name="retarget_name" defaultValue={campaign.retarget_name ?? ""} /></label><label>Campaign completed on<input name="campaign_completed_on" type="date" defaultValue={campaign.campaign_completed_on ?? ""} /></label><label>Retarget completed on<input name="retarget_completed_on" type="date" defaultValue={campaign.retarget_completed_on ?? ""} /></label></> : null}
+    {INPUT_METRICS.map(([name, label]) => <label key={name}>{label}<input name={name} type="number" min="0" step="1" value={metrics[name]} readOnly={calculatedSchedule && name === "total_attempted"} onChange={(event) => setMetrics((current) => ({ ...current, [name]: event.target.value }))} /></label>)}
     <label>Total delivered<input name="total_delivered_final" type="number" value={totalDelivered} readOnly aria-describedby="total-delivered-help" /></label>
     <p id="total-delivered-help" className="field-helper">First delivery + retarget delivered</p>
     <label>Total failed<input name="total_failed" type="number" value={totalFailed} readOnly aria-describedby="total-failed-help" /></label>

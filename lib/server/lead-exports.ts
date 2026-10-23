@@ -48,6 +48,7 @@ export async function createLeadExport(actorId: string, request: LeadExportReque
     serial_end: null,
     campaign_date: endDate,
     campaign_end_date: schedule?.campaignEndDate ?? null,
+    total_attempted: rows.length,
     created_by: actorId,
     assigned_to: actorId,
     retarget_name: `Retarget_${name}`,
