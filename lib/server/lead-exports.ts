@@ -1,7 +1,7 @@
 import "server-only";
 import { buildExportCsv } from "@/lib/architects/export-csv";
 import { isIsoDate, normalizePhone } from "@/lib/architects/normalization";
-import { followingMonday, leadExportName } from "@/lib/campaigns/logic";
+import { AUTOMATED_WHATSAPP_SCHEDULE_START, followingMonday, leadExportName, whatsappCampaignSchedule } from "@/lib/campaigns/logic";
 import { accountMatchesType, isCampaignAccount } from "@/lib/campaigns/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -37,6 +37,7 @@ export async function createLeadExport(actorId: string, request: LeadExportReque
   if (!rows.length) throw new Error("No leads were marked in that date range");
 
   const name = leadExportName(startDate, endDate);
+  const schedule = endDate >= AUTOMATED_WHATSAPP_SCHEDULE_START ? whatsappCampaignSchedule(endDate) : null;
   const { data: campaign, error: campaignError } = await admin.from("campaigns").insert({
     name,
     campaign_type: "whatsapp",
@@ -46,10 +47,12 @@ export async function createLeadExport(actorId: string, request: LeadExportReque
     serial_start: null,
     serial_end: null,
     campaign_date: endDate,
+    campaign_end_date: schedule?.campaignEndDate ?? null,
     created_by: actorId,
     assigned_to: actorId,
     retarget_name: `Retarget_${name}`,
-    retarget_due_date: followingMonday(endDate),
+    retarget_start_date: schedule?.retargetStartDate ?? null,
+    retarget_due_date: schedule?.retargetEndDate ?? followingMonday(endDate),
   }).select("id").single();
   if (campaignError || !campaign) throw new Error(campaignError?.message ?? "Could not create lead export campaign");
 

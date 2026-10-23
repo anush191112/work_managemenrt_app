@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { campaignMetrics, campaignName, followingMonday, leadExportName, mondayOfWeek, stateCode } from "./logic";
+import { campaignMetrics, campaignName, followingMonday, leadExportName, mondayOfWeek, stateCode, whatsappCampaignSchedule } from "./logic";
 
 describe("campaign date rules", () => {
   it("sets retarget due date to the following Monday for every day of a campaign week", () => {
@@ -10,6 +10,12 @@ describe("campaign date rules", () => {
 
   it("treats Sunday as part of the preceding Monday-started week", () => {
     expect(mondayOfWeek("2026-09-27")).toBe("2026-09-21");
+  });
+
+  it("sets WhatsApp campaign and retarget windows from the campaign start date", () => {
+    expect(whatsappCampaignSchedule("2026-10-19")).toEqual({ campaignEndDate: "2026-10-23", retargetStartDate: "2026-10-26", retargetEndDate: "2026-10-30" });
+    expect(whatsappCampaignSchedule("2026-10-21")).toEqual({ campaignEndDate: "2026-10-24", retargetStartDate: "2026-10-26", retargetEndDate: "2026-10-30" });
+    expect(whatsappCampaignSchedule("2026-10-19", true)).toEqual({ campaignEndDate: "2026-10-22", retargetStartDate: "2026-10-23", retargetEndDate: "2026-10-26" });
   });
 
   it("calculates rolled-up metrics and completion from the campaign fields", () => {

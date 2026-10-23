@@ -55,6 +55,21 @@ function shortDate(value: string) {
   return `${day}_${month}`;
 }
 
+export const AUTOMATED_WHATSAPP_SCHEDULE_START = "2026-10-19";
+
+export function whatsappCampaignSchedule(campaignDate: string, birthday = false) {
+  if (birthday) {
+    const campaignEndDate = addDays(campaignDate, 3);
+    const retargetStartDate = addDays(campaignEndDate, 1);
+    return { campaignEndDate, retargetStartDate, retargetEndDate: addDays(retargetStartDate, 3) };
+  }
+
+  const day = utcDate(campaignDate).getUTCDay();
+  const campaignEndDate = addDays(campaignDate, day === 1 || day === 2 ? 5 - day : 6 - day);
+  const retargetStartDate = followingMonday(campaignDate);
+  return { campaignEndDate, retargetStartDate, retargetEndDate: addDays(retargetStartDate, 4) };
+}
+
 export function leadExportName(startDate: string | null, endDate: string): string {
   return startDate ? `lead_${shortDate(startDate)}_to_${shortDate(endDate)}` : `lead_till_${shortDate(endDate)}`;
 }

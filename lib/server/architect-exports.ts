@@ -1,5 +1,5 @@
 import "server-only";
-import { campaignName, followingMonday } from "@/lib/campaigns/logic";
+import { AUTOMATED_WHATSAPP_SCHEDULE_START, campaignName, followingMonday, whatsappCampaignSchedule } from "@/lib/campaigns/logic";
 import { accountMatchesType, isCampaignAccount, type CampaignType } from "@/lib/campaigns/types";
 import { isIsoDate, normalizeEmail, normalizePhone } from "@/lib/architects/normalization";
 import { buildExportCsv } from "@/lib/architects/export-csv";
@@ -86,6 +86,9 @@ export async function createExport(actorId: string, request: ExportRequest) {
   if (!isCampaignAccount(request.account) || !accountMatchesType(request.account, selected.campaignType)) throw new Error("Select an account that matches the campaign type");
   const campaignDate = request.mode === "birthday" ? selected.birthdayCampaignDate : request.campaignDate;
   if (!isIsoDate(campaignDate)) throw new Error("Campaign date must be a valid date");
+  const schedule = selected.campaignType === "whatsapp" && campaignDate >= AUTOMATED_WHATSAPP_SCHEDULE_START
+    ? whatsappCampaignSchedule(campaignDate, request.mode === "birthday")
+    : null;
   const admin = createAdminClient();
   const last = selected.rows.at(-1)!;
   const logData: Record<string, unknown> = request.mode === "birthday"
@@ -99,8 +102,10 @@ export async function createExport(actorId: string, request: ExportRequest) {
     state: request.mode === "birthday" ? null : request.state.trim(), serial_start: request.mode === "birthday" ? null : request.startingSerial, serial_end: request.mode === "birthday" ? null : last.serial_no,
     csv_export_id: log.id, campaign_date: campaignDate, created_by: actorId, assigned_to: actorId,
     campaign_completed_on: selected.campaignType === "email" ? campaignDate : null,
+    campaign_end_date: schedule?.campaignEndDate ?? null,
     retarget_name: selected.campaignType === "whatsapp" ? `${request.mode === "birthday" ? "Belated" : "Retarget"}_${campaignName(request.mode === "birthday" ? null : request.state.trim(), campaignDate, request.mode === "birthday" ? null : request.startingSerial, request.mode === "birthday" ? null : last.serial_no, request.mode === "birthday")}` : null,
-    retarget_due_date: selected.campaignType === "whatsapp" ? followingMonday(campaignDate) : null,
+    retarget_start_date: schedule?.retargetStartDate ?? null,
+    retarget_due_date: selected.campaignType === "whatsapp" ? schedule?.retargetEndDate ?? followingMonday(campaignDate) : null,
     stage: selected.campaignType === "email" ? "complete" : "awaiting_completion",
   }).select("id").single();
   if (campaignError || !campaign) { await admin.from("architect_export_logs").delete().eq("id", log.id); throw new Error(campaignError?.message ?? "Could not create campaign"); }
