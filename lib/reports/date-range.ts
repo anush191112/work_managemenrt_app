@@ -5,6 +5,11 @@ export type ReportRange = (typeof REPORT_RANGES)[number];
 
 export interface ReportPeriod { range: ReportRange; startDate: string | null; endDate: string; label: string; }
 
+export function formatReportDate(value: string): string {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
+}
+
 function shiftDays(date: string, days: number): string {
   const value = new Date(`${date}T00:00:00Z`);
   value.setUTCDate(value.getUTCDate() + days);
@@ -23,6 +28,6 @@ export function resolveReportPeriod(input: { range?: string; start?: string; end
   if (range === "week") return { range, startDate: shiftDays(validEnd, -6), endDate: validEnd, label: "Last 7 days" };
   if (range === "month") return { range, startDate: shiftMonths(validEnd, -1), endDate: validEnd, label: "Last month" };
   if (range === "quarter") return { range, startDate: shiftMonths(validEnd, -3), endDate: validEnd, label: "Last 3 months" };
-  if (range === "custom" && isIstDate(input.start) && input.start <= validEnd) return { range, startDate: input.start, endDate: validEnd, label: `${input.start} to ${validEnd}` };
-  return { range: "all", startDate: null, endDate: validEnd, label: `All time through ${validEnd}` };
+  if (range === "custom" && isIstDate(input.start) && input.start <= validEnd) return { range, startDate: input.start, endDate: validEnd, label: `${formatReportDate(input.start)} to ${formatReportDate(validEnd)}` };
+  return { range: "all", startDate: null, endDate: validEnd, label: `All time through ${formatReportDate(validEnd)}` };
 }
