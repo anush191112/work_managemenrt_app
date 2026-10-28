@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatReportDate, resolveReportPeriod } from "./date-range";
+import { formatReportDate, formatReportTimestamp, resolveReportPeriod } from "./date-range";
 
 describe("resolveReportPeriod", () => {
   it("uses all time through today by default", () => {
@@ -12,5 +12,6 @@ describe("resolveReportPeriod", () => {
 
   it("formats visible ISO dates as day-month-year", () => {
     expect(formatReportDate("2026-10-21")).toBe("21-10-2026");
+    expect(formatReportTimestamp("2026-10-21T19:30:00.000Z")).toBe("22-10-2026");
   });
 });
