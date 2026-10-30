@@ -9,7 +9,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!actor) return NextResponse.json({ error: "Authentication is required" }, { status: 401 });
   const { id } = await params;
   const admin = createAdminClient();
-  const { data: campaign, error: findError } = await admin.from("campaigns").select("id, campaign_type, campaign_date, campaign_end_date, campaign_completed_on, retarget_name, retarget_start_date, retarget_due_date, retarget_completed_on, created_by, assigned_to, is_shared").eq("id", id).maybeSingle();
+  const { data: campaign, error: findError } = await admin.from("campaigns").select("id, campaign_type, campaign_date, campaign_end_date, campaign_completed_on, retarget_name, retarget_start_date, retarget_due_date, retarget_completed_on, total_attempted, created_by, assigned_to, is_shared").eq("id", id).maybeSingle();
   if (findError || !campaign) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
   if (actor.role !== "admin" && !campaign.is_shared && campaign.assigned_to !== actor.id) {
     if (actor.role !== "manager") return NextResponse.json({ error: "Not allowed" }, { status: 403 });
@@ -28,7 +28,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ campaign: data });
     }
     const calculatedSchedule = campaign.campaign_type === "whatsapp" && campaign.campaign_date >= "2026-10-19";
-    const metrics = campaignMetrics({ ...body, campaign_type: campaign.campaign_type, campaign_date: campaign.campaign_date, retarget_name: body.retarget_name ?? campaign.retarget_name, campaign_completed_on: body.campaign_completed_on ?? campaign.campaign_completed_on, retarget_completed_on: body.retarget_completed_on ?? campaign.retarget_completed_on ?? (calculatedSchedule ? campaign.retarget_due_date : null) });
+    const metrics = campaignMetrics({ ...body, total_attempted: campaign.total_attempted, campaign_type: campaign.campaign_type, campaign_date: campaign.campaign_date, retarget_name: body.retarget_name ?? campaign.retarget_name, campaign_completed_on: body.campaign_completed_on ?? campaign.campaign_completed_on, retarget_completed_on: body.retarget_completed_on ?? campaign.retarget_completed_on ?? (calculatedSchedule ? campaign.retarget_due_date : null) });
     const { data, error } = await admin.from("campaigns").update(metrics).eq("id", id).select("id, stage").single();
     if (error || !data) throw new Error(error?.message ?? "Could not update campaign");
     await reconcileCampaignTaskItems(id, data.stage === "complete");

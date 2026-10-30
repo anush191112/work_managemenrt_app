@@ -33,13 +33,13 @@ export function CampaignMetricsForm({ campaign, calculatedSchedule }: { campaign
   }
 
   if (campaign.campaign_type === "email") return <form onSubmit={submit} className="metrics-form">
-    {EMAIL_METRICS.map(([name, label]) => <label key={name}>{label}<input name={name} type="number" min="0" step="1" value={emailMetrics[name]} onChange={(event) => setEmailMetrics((current) => ({ ...current, [name]: event.target.value }))} /></label>)}
+    {EMAIL_METRICS.map(([name, label]) => <label key={name}>{label}<input name={name} type="number" min="0" step="1" value={emailMetrics[name]} readOnly={name === "total_attempted"} onChange={(event) => setEmailMetrics((current) => ({ ...current, [name]: event.target.value }))} />{name === "total_attempted" ? <span className="field-helper">Set when the campaign is created.</span> : null}</label>)}
     <button className="primary-action">Save metrics</button>{message ? <p className="action-message" role="status">{message}</p> : null}
   </form>;
 
   return <form onSubmit={submit} className="metrics-form">
     {!calculatedSchedule ? <><label>Interakt retarget campaign name<input name="retarget_name" defaultValue={campaign.retarget_name ?? ""} /></label><label>Campaign completed on<input name="campaign_completed_on" type="date" defaultValue={campaign.campaign_completed_on ?? ""} /></label><label>Retarget completed on<input name="retarget_completed_on" type="date" defaultValue={campaign.retarget_completed_on ?? ""} /></label></> : null}
-    {INPUT_METRICS.map(([name, label]) => <label key={name}>{label}<input name={name} type="number" min="0" step="1" value={metrics[name]} readOnly={calculatedSchedule && name === "total_attempted"} onChange={(event) => setMetrics((current) => ({ ...current, [name]: event.target.value }))} /></label>)}
+    {INPUT_METRICS.map(([name, label]) => <label key={name}>{label}<input name={name} type="number" min="0" step="1" value={metrics[name]} readOnly={name === "total_attempted"} onChange={(event) => setMetrics((current) => ({ ...current, [name]: event.target.value }))} />{name === "total_attempted" ? <span className="field-helper">Set when the campaign is created.</span> : null}</label>)}
     <label>Total delivered<input name="total_delivered_final" type="number" value={totalDelivered} readOnly aria-describedby="total-delivered-help" /></label>
     <p id="total-delivered-help" className="field-helper">First delivery + retarget delivered</p>
     <label>Total failed<input name="total_failed" type="number" value={totalFailed} readOnly aria-describedby="total-failed-help" /></label>
